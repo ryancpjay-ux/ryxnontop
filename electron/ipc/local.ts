@@ -28,6 +28,8 @@ import type WebSocket from "ws";
 
 const requests = new Map<string, AbortController>();
 let networkEnabled = true;
+let windowsWorkActive = () => false;
+export function isWindowsWorkActive() { return windowsWorkActive(); }
 
 export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
   const credentials = process.platform === "win32" ? createWindowsCredentialStore() : createCredentialStore();
@@ -36,6 +38,7 @@ export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
   const openingSockets = new Map<string, { owner: number; controller: AbortController }>();
   const sockets = new Map<string, { socket: WebSocket; owner: number }>();
   if (process.platform === "win32") {
+    windowsWorkActive = () => requests.size > 0 || openingSockets.size > 0 || sockets.size > 0;
     handleTrusted("windows:connection-test", async (_event, input: { service: "openai" | "gemini" | "anthropic" | "deepgram"; key?: string; model: string; language?: string }) => {
       if (!networkEnabled) throw new Error("Enable network access in Privacy before testing connections.");
       if (!input || !["openai", "gemini", "anthropic", "deepgram"].includes(input.service)) throw new Error("Invalid connection service.");

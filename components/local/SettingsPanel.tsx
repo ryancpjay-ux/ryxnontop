@@ -12,6 +12,7 @@ import { WindowsApiConnections, type WindowsApiProps } from "./WindowsApiSetup";
 import { version } from "@/package.json";
 type Props = {
   windowsApi: WindowsApiProps;
+  onUpdateSave: () => Promise<void>;
   provider: Provider;
   model: string;
   providerKey: string;
@@ -303,7 +304,7 @@ export default function SettingsPanel(p: Props) {
         )}
         {tab === "General" && (
           <>
-            {p.windows && <WindowsUpdates save={p.windowsApi.save} active={p.active} />}
+            {p.windows && <WindowsUpdates save={p.onUpdateSave} active={p.active} />}
             <section className="ryx-settings-card">
               <h2>Storage & diagnostics</h2>
               <Option

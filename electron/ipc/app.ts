@@ -36,6 +36,7 @@ export function registerAppIpc(): void {
   handleTrusted("updater:check", () => checkForUpdates(true));
 
   handleTrusted("updater:install", () => {
+    if (process.platform === "win32" && require("./local").isWindowsWorkActive()) throw new Error("Finish Listen and Ask before restarting to install the update.");
     installDownloadedUpdate();
   });
 }

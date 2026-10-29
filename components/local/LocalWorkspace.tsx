@@ -1,5 +1,6 @@
 "use client";
 import WindowsUpdates from "./WindowsUpdates";
+import { saveWindowsUpdateState } from "@/lib/windows-update-save";
 
 import {WindowsCapturePanel} from "./WindowsCapturePanel";
 import {useLiveScreen} from "./useLiveScreen";
@@ -1739,6 +1740,14 @@ export function LocalWorkspace() {
   const answerBusy = Boolean(busy && busy !== "notes");
   const currentRequest = requests.find((r) => r.id === selected);
   const status = listenStatus({audio:audio.state,interim:audio.interim,pending:autoPendingCount,generating:busy==="listen",streaming:busy==="listen" && responseTiming?.first!=null,error:Boolean(listenFailure),completed:requests.some(r=>r.status==="answered")});
+  async function prepareWindowsUpdate() {
+    await saveWindowsUpdateState({
+      isActive: () => Boolean(requestId.current) || audio.state !== "idle",
+      saveKeys: saveProviderKeys,
+      snapshot: () => latestWorkspace.current ? JSON.stringify(freshSession(JSON.parse(latestWorkspace.current))) : "",
+      saveWorkspace: snapshot => window.localCopilot?.saveWorkspaceNow?.(snapshot),
+    });
+  }
   const windowsApiProps: WindowsApiProps = {
     keys: { geminiKey, openaiKey, deepgramKey, anthropicKey },
     onKeys: keys => { setGeminiKey(keys.geminiKey); setOpenaiKey(keys.openaiKey); setDeepgramKey(keys.deepgramKey); setAnthropicKey(keys.anthropicKey); },
@@ -2682,7 +2691,7 @@ export function LocalWorkspace() {
           </button>
         </div>
       )}
-      {windowsPlatform && !introVisible && !dialog && keysLoaded && <WindowsUpdates compact save={windowsApiProps.save} active={Boolean(busy) || audio.state !== "idle"} />}
+      {windowsPlatform && !introVisible && !dialog && keysLoaded && <WindowsUpdates compact save={prepareWindowsUpdate} active={Boolean(busy) || audio.state !== "idle"} />}
       {dialog && (
         <div
           className="mist-modal-backdrop"
@@ -2845,7 +2854,7 @@ export function LocalWorkspace() {
                 </button>
               </div>
             ) : dialog === "settings" ? (
-              <SettingsPanel windowsApi={windowsApiProps} provider={provider} model={model} providerKey={providerKey} deepgramKey={deepgramKey} keysLoaded={keysLoaded} keyStatus={keyStatus}
+              <SettingsPanel onUpdateSave={prepareWindowsUpdate} windowsApi={windowsApiProps} provider={provider} model={model} providerKey={providerKey} deepgramKey={deepgramKey} keysLoaded={keysLoaded} keyStatus={keyStatus}
                onProvider={changeProvider} onModel={changeModel} onProviderKey={provider==="gemini"?setGeminiKey:provider==="openai"?setOpenaiKey:setAnthropicKey} onDeepgramKey={setDeepgramKey}
                source={source} onSource={setSource} languageControl={<SpokenLanguageMenu value={language} onChange={setLanguage}/>}
                restartControl={audio.state!=="idle" && activeAudioSettings && (source!==activeAudioSettings.source||language!==activeAudioSettings.language) ? <button className="mist-soft-button" onClick={async()=>{try{await saveProviderKeys();restartCapture.current=true;if(requestId.current)void window.localCopilot?.cancel(requestId.current);audio.stop();setDialog(null);setNotice("Saving and restarting Listen with selected settings");}catch(error){setError(error instanceof Error?error.message:"Could not save settings.");}}}>Apply and restart Listen</button>:null}
