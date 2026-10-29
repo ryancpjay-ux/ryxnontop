@@ -2,7 +2,7 @@
 
 Made by Ryan J.
 
-Private Windows beta downloads and release notes. Access is limited to invited GitHub accounts.
+Windows beta downloads and release notes. Download the installer from Releases. Each user supplies their own API keys.
 
 ## Download and install
 
