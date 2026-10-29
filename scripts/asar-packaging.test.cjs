@@ -1,0 +1,12 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const os=require('node:os');const {spawnSync}=require('node:child_process');const asar=require('@electron/asar');
+test('deep dependency JavaScript is packed while native modules remain unpacked',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'ryx-asar-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const source=path.join(root,'resources/app');const deep='node_modules/@deepgram/sdk/dist/cjs/api/resources/manage/resources/v1/resources/projects/resources/billing/resources/breakdown/types/BreakdownListRequestDeployment.js';
+ fs.mkdirSync(path.dirname(path.join(source,deep)),{recursive:true});fs.writeFileSync(path.join(source,deep),'module.exports = "packaged dependency";');fs.writeFileSync(path.join(source,'package.json'),JSON.stringify({main:'electron/main.js'}));fs.mkdirSync(path.join(source,'node_modules/native'),{recursive:true});fs.writeFileSync(path.join(source,'node_modules/native/addon.node'),'synthetic native fixture');
+ const result=spawnSync(process.execPath,[path.resolve(__dirname,'repack-verified.cjs'),root],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
+ const file=path.join(root,'resources/app.asar');assert.equal(asar.extractFile(file,deep).toString(),'module.exports = "packaged dependency";');assert.equal(fs.existsSync(path.join(root,'resources/app.asar.unpacked',deep)),false);assert.equal(fs.readFileSync(path.join(root,'resources/app.asar.unpacked/node_modules/native/addon.node'),'utf8'),'synthetic native fixture');assert.equal(fs.existsSync(source),false);
+});
+test('Windows archive packing waits for the final output buffer before verifying and deleting sources',t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'ryx-asar-flush-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));const source=path.join(root,'resources/app');fs.mkdirSync(source,{recursive:true});fs.writeFileSync(path.join(source,'package.json'),'{"main":"electron/main.js"}');const payload=Buffer.alloc(2*1024*1024+318,0x67);fs.writeFileSync(path.join(source,'zz-final-buffer.txt'),payload);
+ const result=spawnSync(process.execPath,[path.resolve(__dirname,'repack-verified.cjs'),root,'--windows'],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);assert.ok(asar.extractFile(path.join(root,'resources/app.asar'),'zz-final-buffer.txt').equals(payload));assert.equal(fs.existsSync(source),false);
+});

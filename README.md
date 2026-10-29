@@ -1,1 +1,19 @@
-# ryxnontopMade by Ryan J.Windows and macOS downloads and release notes. Each user supplies their own API keys.## Download and installOpen [Releases](https://github.com/ryancpjay-ux/ryxnontop/releases) and choose your platform under **Assets**. The Source code archives are not the application.### Mac — 0.20.1, Apple SiliconDownload **ryxnontop-0.20.1-macOS-Apple-Silicon.zip**, extract it, and copy **ryxnontop.app** to Applications. This is the exact Mac version I’m currently using. I packaged it without rebuilding it or applying the Windows-only changes.This build supports Apple Silicon (M-series) Macs, not Intel Macs. It is locally signed but not Apple Developer ID signed or notarized, so other Macs may block it. Trusted distribution requires Developer ID signing and notarization. I haven’t tested it on another Mac yet.### Windows — beta 0.20.2, x64Download **ryxnontop-0.20.2-Windows-Setup.exe**, run the installer, then launch **ryxnontop** from your desktop or Start menu. This installer is unsigned. Automated regression tests and package checks passed on macOS; live Windows installation, capture, and authentication still need real-world testing.## First-time setup- In **Settings > AI & keys**, choose your provider and add your own API key. Use **Test API Connection** to check it.- In **Settings > Listen**, add your own Deepgram API key.- Allow microphone or screen capture when prompted. If capture is blocked, open **Permissions** in the app for checks and operating-system settings links.- Each user supplies their own keys and API billing. No saved API keys or personal workspace data are included in downloads.## SupportIf you have any issues, DM me at [@ryan.c.jay](https://www.instagram.com/ryan.c.jay/) or email [ryancpjay@gmail.com](mailto:ryancpjay@gmail.com).
+# ryxnontop
+
+My desktop assistant for Listen, Ask and local notes. Downloads: [GitHub Releases](https://github.com/ryancpjay-ux/ryxnontop/releases).
+
+## Windows
+
+I publish experimental Windows versions as prereleases. Stable releases are built from approved, tested source tags by the Windows-only GitHub Actions workflow. See [Windows releases and updates](WINDOWS-RELEASES.md) for signing setup, testing, and the release process. Users supply their own AI provider and Deepgram credentials; no API keys are distributed in this repository.
+
+## macOS
+
+The existing Mac release remains unchanged. This workflow does not build or publish macOS. See the [download guide](DOWNLOADS.md) for existing releases.
+
+## Development
+
+Use Bun 1.3.10 and Node 24: `bun install --frozen-lockfile`. Run `bun run build:electron`, `node --test scripts/*.test.cjs`, `bun run lint`, and `node node_modules/typescript/bin/tsc --noEmit`. Native Windows packaging: `bun run build`, then `bunx electron-builder --win nsis --x64 --config scripts/windows-ci-config.cjs --publish never`.
+
+This application builds on [Realtime Interview Copilot](https://github.com/innovatorved/realtime-interview-copilot) by Ved Gupta and its contributors, under the [MIT license](LICENSE). Original copyright and license notices are preserved.
+
+For issues, DM me [@ryan.c.jay](https://www.instagram.com/ryan.c.jay/) or email ryancpjay@gmail.com.

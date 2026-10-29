@@ -1,0 +1,2490 @@
+/* Reference-driven desktop workspace. Native capture remains in Electron. */
+body {
+  margin: 0;
+}
+.mist-app {
+  --mist-ink: #ececec;
+  --mist-muted: #989898;
+  --mist-line: rgba(227, 227, 227, 0.16);
+  --mist-panel: rgba(16, 16, 16, var(--panel-alpha, 0.88));
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 15px 24px 9px;
+  gap: 14px;
+  color: var(--mist-ink);
+  font:
+    13px / 1.5 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  overflow: hidden;
+}
+.mist-app.browser {
+  background:
+    radial-gradient(ellipse at 20% 35%, #414141 0, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, #383838 0, transparent 50%), #1c1c1c;
+}
+.mist-app.mist-light {
+  --mist-ink: #2d2d2d;
+  --mist-muted: #727272;
+  --mist-line: rgba(60, 60, 60, 0.18);
+  --mist-panel: rgba(240, 240, 240, var(--panel-alpha, 0.88));
+}
+.mist-app button,
+.mist-app input,
+.mist-app textarea,
+.mist-app select {
+  font: inherit;
+}
+.mist-app button {
+  cursor: pointer;
+  color: inherit;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    opacity 0.15s;
+}
+.mist-app button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mist-app button:focus-visible,
+.mist-app input:focus-visible,
+.mist-app textarea:focus-visible,
+.mist-app select:focus-visible,
+.mist-app summary:focus-visible {
+  outline: 2px solid #cbcbcb;
+  outline-offset: 3px;
+}
+.mist-app button {
+  background: none;
+  border: 0;
+}
+.mist-topline {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  -webkit-app-region: drag;
+  gap: 20px;
+}
+.mist-wordmark {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -1px;
+}
+.mist-wordmark span {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  color: var(--mist-muted);
+  margin-left: 6px;
+}
+.mist-top-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--mist-muted);
+}
+.mist-window-buttons {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+.mist-window-buttons .mist-icon {
+  width: 25px;
+  height: 25px;
+}
+.mist-window-buttons .mist-icon svg {
+  width: 13px;
+}
+.mist-hub {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin-top: 3px;
+}
+.mist-grip {
+  width: 68px;
+  height: 5px;
+  border: 1px solid #a8a8a880;
+  background: #d3d3d342;
+  border-radius: 6px;
+  -webkit-app-region: drag;
+}
+.mist-hub-inner {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  padding: 6px 11px;
+  background: var(--mist-panel);
+  border: 1px solid var(--mist-line);
+  border-radius: 40px;
+  box-shadow: 0 5px 30px #00000033;
+  backdrop-filter: blur(24px);
+}
+.mist-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 33px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mist-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.7;
+}
+.mist-icon:hover {
+  background: #a7a7a720;
+}
+.mist-icon.active {
+  background: #ececec;
+  color: #393939;
+  box-shadow: 0 0 18px #f1f1f118;
+}
+.mist-hub .mist-icon {
+  width: 36px;
+  height: 36px;
+}
+.mist-divider {
+  height: 22px;
+  width: 1px;
+  background: var(--mist-line);
+}
+.mist-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(340px, 1fr);
+  gap: 20px;
+  min-height: 0;
+  flex: 1;
+  margin-top: 2px;
+}
+.mist-panels.ask-hidden {
+  grid-template-columns: 1fr;
+}
+.mist-panel {
+  background: var(--mist-panel);
+  border: 1px solid var(--mist-line);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 60px #00000022,
+    inset 0 1px 0 #ffffff03;
+  backdrop-filter: blur(28px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.mist-panel:after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  right: 6px;
+  width: 13px;
+  height: 13px;
+  border-bottom: 2px solid var(--mist-line);
+  border-right: 2px solid var(--mist-line);
+  border-radius: 0 0 10px 0;
+  pointer-events: none;
+}
+.mist-panel-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 18px;
+  min-height: 52px;
+  gap: 12px;
+  -webkit-app-region: drag;
+}
+.mist-panel-top button {
+  -webkit-app-region: no-drag;
+}
+.mist-status {
+  font-size: 12px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  white-space: nowrap;
+}
+.mist-status i,
+.mist-bottomline i {
+  width: 6px;
+  height: 6px;
+  background: #d5d5d5;
+  border-radius: 50%;
+  display: inline-block;
+}
+.mist-status.live i {
+  background: #c5c5c5;
+  box-shadow: 0 0 9px #c5c5c560;
+  animation: mist-pulse 1.6s infinite;
+}
+.mist-panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--mist-muted);
+}
+.mist-meta-separator {
+  width: 1px;
+  height: 13px;
+  background: var(--mist-line);
+  margin: 0 4px;
+}
+.mist-top-actions {
+  display: flex;
+  gap: 4px;
+}
+.mist-top-actions .mist-icon {
+  height: 24px;
+  width: 24px;
+}
+.mist-listen-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.mist-rail {
+  width: 57px;
+  padding: 80px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.mist-rail .mist-icon {
+  width: 30px;
+  height: 30px;
+}
+.mist-listen-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.mist-transcript {
+  min-width: 0;
+  overflow: auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+.mist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 26px 14px;
+}
+.mist-transcript > .mist-empty {
+  padding-top: 32px;
+}
+.mist-empty-mark {
+  width: 39px;
+  height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--mist-line);
+  border-radius: 13px;
+  margin-bottom: 19px;
+  color: var(--mist-muted);
+}
+.mist-empty-mark svg {
+  width: 20px;
+}
+.mist-empty h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin: 0 0 6px;
+}
+.mist-empty p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--mist-muted);
+  margin: 0;
+  max-width: 330px;
+}
+.mist-soft-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 11px;
+  background: #c9c9c90c !important;
+  border: 1px solid var(--mist-line) !important;
+  border-radius: 20px;
+  font-size: 11px !important;
+}
+.mist-empty .mist-soft-button {
+  margin-top: 21px;
+}
+.mist-requests {
+  min-width: 0;
+  overflow: auto;
+  padding: 25px 19px 20px 12px;
+}
+.mist-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.mist-section-title h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+.mist-section-title small {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--mist-muted);
+  font-weight: 400;
+}
+.mist-muted {
+  font-size: 12px;
+  color: var(--mist-muted);
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.mist-text-button {
+  font-size: 11px !important;
+  color: var(--mist-muted) !important;
+}
+.mist-request-tabs {
+  display: flex;
+  gap: 6px;
+  flex-direction: column;
+  margin: 16px 0;
+}
+.mist-request-tabs button {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--mist-line);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+}
+.mist-request-tabs button.selected {
+  background: #bfbfbf14;
+  border-color: #bfbfbf50;
+}
+.mist-request-tabs span {
+  color: var(--mist-muted);
+  font-size: 10px;
+}
+.mist-answer {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.mist-answer .mist-soft-button {
+  margin-top: 15px;
+}
+.mist-transcript-lines {
+  overflow: auto;
+  padding-top: 8px;
+}
+.mist-transcript-lines p {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 15px 0;
+}
+.mist-transcript-lines span {
+  font-size: 9px;
+  color: var(--mist-muted);
+  display: block;
+}
+.mist-transcript-lines .interim {
+  opacity: 0.5;
+}
+.mist-listen-footer {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex-wrap: wrap;
+  padding: 13px 20px 15px 22px;
+  min-height: 56px;
+  font-size: 10px;
+  color: var(--mist-muted);
+}
+.mist-listen-footer button,
+.mist-listen-footer label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.mist-listen-footer select {
+  background: transparent;
+  max-width: 90px;
+  border: 0;
+  color: inherit;
+  font-size: 10px;
+}
+.mist-app option {
+  background: #2b2b2b;
+  color: #eeeeee;
+}
+.mist-listen-footer .mist-start {
+  border: 1px solid #bcbcbc;
+  box-shadow: inset 0 0 9px #bcbcbc1c;
+  border-radius: 30px;
+  padding: 3px 10px;
+  color: #e2e2e2;
+  font-weight: 600;
+}
+.mist-listen-footer .mist-start.recording {
+  border-color: #b1b1b1;
+  color: #cacaca;
+}
+.mist-listen-footer span {
+  opacity: 0.5;
+  font-size: 9px;
+}
+.mist-context-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #cbcbcb;
+}
+.mist-listen-footer meter {
+  width: 50px;
+  height: 7px;
+}
+.mist-ask {
+  margin: 0 0 80px;
+}
+.mist-chat {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 23px;
+  scrollbar-width: thin;
+}
+.mist-chat > .mist-empty {
+  height: 100%;
+  min-height: 150px;
+}
+.mist-chat .mist-empty p {
+  max-width: 350px;
+  font-size: 11px;
+}
+.mist-message {
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 12px 0 22px;
+}
+.mist-message > span {
+  display: block;
+  color: var(--mist-muted);
+  font-size: 10px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mist-message.user {
+  background: #cbcbcb0a;
+  border: 1px solid var(--mist-line);
+  padding: 10px 13px;
+  border-radius: 13px;
+}
+.mist-message-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 9px;
+}
+.mist-message-actions .mist-icon {
+  width: 23px;
+  height: 23px;
+}
+.mist-message-actions svg {
+  width: 12px;
+  height: 12px;
+}
+.mist-composer-area {
+  padding: 13px 13px 11px;
+}
+.mist-composer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ececec;
+  border: 1px solid #fefefeb3;
+  border-radius: 30px;
+  padding: 9px 10px 9px 17px;
+  color: #444444;
+  box-shadow: 0 0 20px #eaeaea16;
+}
+.mist-composer input {
+  min-width: 0;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: #363636;
+  font-size: 12px;
+}
+.mist-composer input::placeholder {
+  color: #989898;
+}
+.mist-composer button {
+  height: 25px;
+  width: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.mist-composer button:hover {
+  background: #00000011;
+}
+.mist-composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 2px 0;
+  font-size: 10px;
+}
+.mist-composer-tools > .mist-icon {
+  width: 28px;
+  height: 28px;
+}
+.mist-composer-tools > .mist-icon:first-child {
+  border: 1px solid var(--mist-line);
+  border-radius: 9px;
+}
+.mist-composer-tools > .mist-icon svg {
+  width: 15px;
+  height: 15px;
+}
+.mist-model {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px !important;
+  margin-right: 6px;
+}
+.mist-composer-tools > span {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--mist-muted);
+}
+.mist-attachment {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: var(--mist-muted);
+  padding: 0 8px 9px;
+}
+.mist-attachment button {
+  margin-left: auto;
+}
+.mist-bottomline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--mist-muted);
+  font-size: 10px;
+  padding: 0 4px;
+  min-height: 25px;
+}
+.mist-bottomline > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.mist-bottomline > div {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+.mist-bottomline i {
+  width: 4px;
+  height: 4px;
+  opacity: 0.5;
+}
+.mist-bottomline .mist-icon {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+}
+.mist-bottomline .mist-icon.active {
+  color: #e4e4e4;
+}
+.mist-bottomline .mist-icon svg {
+  width: 13px;
+  height: 13px;
+}
+.mist-notes {
+  flex: 1;
+  min-width: 0;
+  padding: 15px 22px 15px 5px;
+  display: flex;
+  flex-direction: column;
+}
+.mist-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 16px 0;
+  color: var(--mist-muted);
+}
+.mist-search input {
+  border: 0;
+  background: transparent;
+  color: var(--mist-ink);
+  font-size: 12px;
+  width: 100%;
+}
+.mist-note-layout {
+  display: grid;
+  grid-template-columns: 155px 1fr;
+  min-height: 0;
+  flex: 1;
+  gap: 18px;
+}
+.mist-note-list {
+  overflow: auto;
+  border-right: 1px solid var(--mist-line);
+  padding-right: 12px;
+}
+.mist-note-list button {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+  padding: 9px;
+  border-radius: 9px;
+  margin-bottom: 5px;
+}
+.mist-note-list button.selected {
+  background: #bfbfbf14;
+}
+.mist-note-list strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.mist-note-list span,
+.mist-note-list p {
+  color: var(--mist-muted);
+  font-size: 10px;
+}
+.mist-note-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.mist-note-editor > input {
+  background: transparent;
+  border: 0;
+  color: var(--mist-ink);
+  font-size: 18px;
+  font-weight: 600;
+  padding: 4px 0 13px;
+  min-width: 0;
+}
+.mist-note-editor textarea {
+  flex: 1;
+  min-height: 80px;
+  resize: none;
+  color: var(--mist-ink);
+  background: transparent;
+  border: 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.mist-note-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--mist-muted);
+}
+.mist-note-actions > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mist-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0808089c;
+  backdrop-filter: blur(9px);
+  padding: 20px;
+}
+.mist-dialog {
+  position: relative;
+  background: #202020;
+  color: #eaeaea;
+  border: 1px solid #c7c7c732;
+  border-radius: 24px;
+  width: 580px;
+  max-width: 100%;
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 35px 38px;
+  box-shadow: 0 30px 100px #00000077;
+}
+.mist-dialog-close {
+  position: absolute;
+  right: 17px;
+  top: 17px;
+  color: #a5a5a5 !important;
+}
+.mist-dialog-heading > svg {
+  width: 22px;
+  height: 22px;
+  color: #c3c3c3;
+  margin-bottom: 17px;
+}
+.mist-dialog-heading h1 {
+  font-size: 24px;
+  letter-spacing: -0.7px;
+  margin: 0;
+  line-height: 1.25;
+  font-weight: 500;
+}
+.mist-dialog-heading p {
+  margin: 9px 0 25px;
+  font-size: 12px;
+  color: #a1a1a1;
+}
+.mist-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+.mist-settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+  color: #cacaca;
+}
+.mist-settings-grid label:nth-child(-n + 2) {
+  grid-column: 1 / -1;
+}
+.mist-settings-grid input:not([type="range"]),
+.mist-settings-grid select {
+  width: 100%;
+  background: #ffffff05;
+  border: 1px solid #c7c7c729;
+  border-radius: 9px;
+  padding: 10px 11px;
+  color: #ececec;
+  font-size: 12px;
+}
+.mist-settings-hint {
+  grid-column: 1 / -1;
+  color: #959595;
+  font-size: 10px;
+  line-height: 1.7;
+  margin: -5px 0 2px;
+}
+.mist-settings-grid input[type="range"] {
+  accent-color: #cacaca;
+}
+.mist-shortcuts {
+  margin: 24px 0;
+  border-top: 1px solid #c7c7c720;
+  padding-top: 18px;
+}
+.mist-shortcuts h2 {
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+.mist-shortcuts p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: #adadad;
+  margin: 8px 0;
+}
+.mist-shortcuts kbd {
+  font-size: 10px;
+  border: 1px solid #c7c7c720;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.mist-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #eaeaea !important;
+  color: #3b3b3b !important;
+  border-radius: 10px;
+  padding: 10px 18px;
+  width: 100%;
+  margin-top: 18px;
+  font-size: 12px !important;
+}
+.mist-context-editor {
+  width: 100%;
+  min-height: 240px;
+  resize: vertical;
+  border: 1px solid #c7c7c729;
+  border-radius: 12px;
+  background: #ffffff03;
+  color: #ececec;
+  padding: 14px;
+  font-size: 12px !important;
+  line-height: 1.8;
+}
+.mist-context-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0;
+}
+.mist-context-actions > span {
+  color: #959595;
+  font-size: 10px;
+}
+.mist-setup {
+  width: 820px;
+  background: #efefef;
+  color: #484848;
+  padding: 42px 48px 28px;
+  border: 1px solid #ffffff99;
+}
+.mist-setup-heading {
+  text-align: center;
+  margin: 0 0 42px;
+}
+.mist-setup-logo {
+  font-size: 32px;
+  font-weight: 750;
+  letter-spacing: -2px;
+  color: #343434;
+}
+.mist-setup-logo span {
+  display: block;
+  letter-spacing: 3px;
+  font-size: 8px;
+  font-weight: 500;
+  margin: 2px 0 25px;
+  color: #919191;
+}
+.mist-setup h1 {
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  margin: 0 0 20px;
+}
+.mist-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 17px;
+  border: 1px solid #86868650 !important;
+  border-radius: 8px;
+  font-size: 13px !important;
+}
+.mist-permission-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.mist-permission-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  align-items: center;
+  gap: 40px;
+}
+.mist-permission-row h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 5px;
+  letter-spacing: -0.2px;
+}
+.mist-permission-row p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #808080;
+  margin: 0;
+}
+.mist-permission-row > button {
+  background: #e1e1e1 !important;
+  border-radius: 7px;
+  padding: 11px 10px;
+  font-size: 12px !important;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+.mist-permission-help {
+  margin-top: 30px;
+  border: 1px solid #86868630;
+  border-radius: 11px;
+  padding: 13px 16px;
+  font-size: 12px;
+}
+.mist-permission-help summary {
+  cursor: pointer;
+}
+.mist-permission-help p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #808080;
+}
+.mist-continue {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin: 24px auto 0;
+  color: #6b6b6b !important;
+  font-size: 12px !important;
+}
+.mist-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(650px, 90vw);
+  padding: 13px 16px;
+  background: #e8e8e8;
+  color: #373737;
+  border: 1px solid #c2c2c2;
+  z-index: 150;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 10px 50px #00000044;
+  font-size: 12px;
+}
+.mist-toast.error {
+  background: #282828;
+  color: #d1d1d1;
+  border-color: #585858;
+}
+.mist-toast button {
+  display: flex;
+  flex-shrink: 0;
+}
+.mist-loading {
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #1c1c1c;
+  color: #ececec;
+  font: 13px system-ui;
+}
+@keyframes mist-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (max-width: 1050px) {
+  .mist-app {
+    padding: 12px;
+    gap: 12px;
+  }
+  .mist-panels {
+    gap: 12px;
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
+  }
+  .mist-panel-meta {
+    font-size: 9px;
+  }
+  .mist-panel-meta > svg,
+  .mist-meta-separator {
+    display: none;
+  }
+  .mist-listen-columns {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  .mist-transcript {
+    min-height: 200px;
+  }
+  .mist-requests {
+    padding: 15px 20px;
+  }
+  .mist-rail {
+    width: 45px;
+    padding-left: 6px;
+    gap: 14px;
+  }
+  .mist-listen-footer {
+    padding: 12px;
+    gap: 9px;
+  }
+  .mist-ask {
+    margin-bottom: 45px;
+  }
+  .mist-composer-tools > span {
+    display: none;
+  }
+}
+@media (max-width: 720px) {
+  .mist-app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+  .mist-panels {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  .mist-panel {
+    min-height: 460px;
+  }
+  .mist-ask {
+    min-height: 420px;
+    margin-bottom: 0;
+  }
+  .mist-top-hint {
+    display: none;
+  }
+  .mist-window-buttons {
+    margin-left: auto;
+  }
+  .mist-dialog {
+    padding: 32px 23px;
+  }
+  .mist-setup {
+    padding: 35px 25px 25px;
+  }
+  .mist-permission-row {
+    gap: 15px;
+    grid-template-columns: 1.2fr 1fr;
+  }
+  .mist-setup-heading {
+    margin-bottom: 25px;
+  }
+  .mist-permission-row h2 {
+    font-size: 13px;
+  }
+  .mist-permission-row p {
+    font-size: 10px;
+  }
+  .mist-permission-row > button {
+    font-size: 10px !important;
+  }
+  .mist-note-layout {
+    grid-template-columns: 110px 1fr;
+  }
+  .mist-bottomline > span {
+    display: none;
+  }
+  .mist-bottomline > div {
+    margin-left: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mist-app * {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+.mist-auto-answer {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 11px;
+  margin: 22px 0;
+  color: #c2c2c2;
+}
+.mist-auto-answer input {
+  accent-color: #cacaca;
+  margin-top: 3px;
+}
+.mist-key-status {
+  display: block;
+  margin-top: 8px;
+  color: #cacaca;
+}
+
+/* ryxnontop: a self-contained branded frame with readable window controls. */
+.mist-app {
+  --mist-ink: #f5f5f5;
+  --mist-muted: #bbbbbb;
+  --mist-line: rgba(234, 234, 234, 0.22);
+  --mist-panel: rgba(23, 23, 23, var(--panel-alpha, 0.96));
+  background: rgba(15, 15, 15, calc(var(--panel-alpha, 0.96) * 0.88));
+  border: 1px solid rgba(226, 226, 226, 0.27);
+  border-radius: 24px;
+  padding: 14px 18px 10px;
+  gap: 12px;
+  box-shadow: inset 0 1px 0 #ffffff09;
+}
+.mist-topline {
+  flex-shrink: 0;
+  background: #232323;
+  border: 1px solid #4d4d4d;
+  border-radius: 15px;
+  min-height: 76px;
+  padding: 12px 16px;
+  gap: 16px;
+  box-shadow: 0 6px 22px #00000022;
+}
+.mist-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.mist-brand-emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #e4e4e4;
+  color: #222222;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -3px;
+  border: 1px solid #f8f8f8;
+  box-shadow: 0 3px 15px #e4e4e418;
+}
+.mist-brand-emblem > span {
+  font-size: 17px;
+  align-self: flex-start;
+  margin: 5px 0 0 1px;
+  letter-spacing: 0;
+}
+.mist-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mist-wordmark {
+  font-size: 27px;
+  line-height: 1.1;
+  font-weight: 750;
+  letter-spacing: -1.1px;
+  margin: 0;
+  color: #f6f6f6;
+}
+.mist-brand-tagline {
+  color: #c3c3c3;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  margin-top: 5px;
+}
+.mist-top-hint {
+  color: #c3c3c3;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.mist-window-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid #525252;
+  margin-left: auto;
+}
+.mist-top-hint + .mist-window-buttons {
+  margin-left: 0;
+}
+.mist-window-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  line-height: 1;
+  flex: 0 0 38px;
+  border: 1px solid #6d6d6d !important;
+  background: #373737 !important;
+  border-radius: 9px;
+  color: #f6f6f6 !important;
+  font-size: 11px !important;
+  -webkit-app-region: no-drag;
+}
+.mist-window-control svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  stroke-width: 2;
+}
+.mist-window-control:hover {
+  background: #4d4d4d !important;
+  border-color: #d0d0d0 !important;
+}
+.mist-window-close {
+  background: #383838 !important;
+  border-color: #676767 !important;
+}
+.mist-window-close:hover {
+  background: #535353 !important;
+  border-color: #bfbfbf !important;
+}
+.mist-hub {
+  margin-top: 0;
+  gap: 5px;
+}
+.mist-hub-inner {
+  background: #1e1e1ef5;
+  border-color: #565656;
+}
+.mist-panel {
+  border-color: #585858;
+}
+.mist-panel-top {
+  border-bottom: 1px solid var(--mist-line);
+  padding: 12px 17px;
+  min-height: 54px;
+}
+.mist-panel-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.mist-panel-label > svg {
+  color: #e4e4e4;
+}
+.mist-panel-label h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+}
+.mist-panel-label .mist-status {
+  border-left: 1px solid var(--mist-line);
+  padding-left: 11px;
+  margin-left: 3px;
+  color: var(--mist-muted);
+  font-size: 11px;
+}
+.mist-listen-columns {
+  padding-top: 8px;
+}
+.mist-ask {
+  margin-bottom: 40px;
+}
+.mist-empty h2 {
+  font-size: 17px;
+}
+.mist-empty p,
+.mist-muted {
+  font-size: 13px;
+}
+.mist-empty-mark {
+  border-color: #6f6f6f;
+  color: #dcdcdc;
+}
+.mist-listen-footer {
+  color: #d9d9d9;
+  font-size: 11px;
+  gap: 12px;
+  border-top: 1px solid var(--mist-line);
+  background: #1a1a1ab3;
+}
+.mist-listen-footer select {
+  font-size: 11px;
+}
+.mist-transcript-lines p,
+.mist-message,
+.mist-answer {
+  font-size: 13px;
+}
+.mist-bottomline {
+  color: #c7c7c7;
+}
+.mist-setup-logo {
+  font-size: 38px;
+  letter-spacing: -1.5px;
+}
+.mist-message ul,
+.mist-answer ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+.mist-message ol,
+.mist-answer ol {
+  list-style: decimal;
+  padding-left: 20px;
+}
+.mist-message pre,
+.mist-answer pre {
+  overflow-x: auto;
+  padding: 12px;
+  border-radius: 8px;
+  background: #00000033;
+}
+.mist-app.mist-light {
+  background: rgba(235, 235, 235, 0.94);
+  --mist-muted: #5f5f5f;
+  --mist-line: rgba(71, 71, 71, 0.26);
+}
+.mist-light .mist-panel {
+  border-color: #a4a4a4;
+}
+.mist-light .mist-panel-label > svg {
+  color: #5c5c5c;
+}
+.mist-light .mist-empty-mark {
+  color: #5c5c5c;
+}
+.mist-light .mist-listen-footer {
+  color: #424242;
+  background: #dcdcdc;
+}
+.mist-light .mist-bottomline {
+  color: #4b4b4b;
+}
+.mist-light .mist-start {
+  color: #464646;
+}
+@media (max-width: 1050px) {
+  .mist-top-hint {
+    display: none;
+  }
+  .mist-top-hint + .mist-window-buttons {
+    margin-left: auto;
+  }
+  .mist-app {
+    padding: 10px;
+  }
+  .mist-ask {
+    margin-bottom: 20px;
+  }
+}
+@media (max-width: 720px) {
+  .mist-topline {
+    min-height: 68px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .mist-wordmark {
+    font-size: 22px;
+  }
+  .mist-brand-tagline {
+    font-size: 6px;
+    letter-spacing: 0.9px;
+  }
+  .mist-brand-emblem {
+    width: 34px;
+    height: 36px;
+    font-size: 28px;
+    border-radius: 10px;
+  }
+  .mist-brand-emblem > span {
+    font-size: 13px;
+  }
+  .mist-brand-lockup {
+    gap: 8px;
+  }
+  .mist-window-buttons {
+    padding-left: 10px;
+    gap: 6px;
+  }
+  .mist-window-control {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+  }
+  .mist-window-control > span {
+    display: none;
+  }
+  .mist-panel-label .mist-status {
+    font-size: 10px;
+    padding-left: 7px;
+  }
+  .mist-ask {
+    margin-bottom: 0;
+  }
+}
+
+/* Shared monochrome tokens apply to the entire window and every modal. */
+.mist-app {
+  color-scheme: dark;
+  --mist-ink: #ffffff;
+  --mist-muted: #b8b8b8;
+  --mist-line: #ffffff33;
+  --mist-panel: rgba(0, 0, 0, var(--panel-alpha, 0.96));
+  --mist-surface: #101010;
+  --mist-secondary: #202020;
+  --mist-inverse: #ffffff;
+  --mist-inverse-ink: #000000;
+  background: rgba(0, 0, 0, calc(var(--panel-alpha, 0.96) * 0.95));
+  border-color: var(--mist-line);
+}
+.mist-app.browser {
+  background: linear-gradient(135deg, #181818, #050505);
+}
+.mist-app.mist-light {
+  color-scheme: light;
+  --mist-ink: #000000;
+  --mist-muted: #505050;
+  --mist-line: #00000033;
+  --mist-panel: rgba(255, 255, 255, var(--panel-alpha, 0.96));
+  --mist-surface: #ffffff;
+  --mist-secondary: #f0f0f0;
+  --mist-inverse: #000000;
+  --mist-inverse-ink: #ffffff;
+  background: rgba(255, 255, 255, 0.97);
+}
+.mist-topline,
+.mist-hub-inner,
+.mist-dialog,
+.mist-setup {
+  background: var(--mist-surface);
+  color: var(--mist-ink);
+  border-color: var(--mist-line);
+}
+.mist-wordmark,
+.mist-setup-logo {
+  color: var(--mist-ink);
+}
+.mist-brand-tagline {
+  color: var(--mist-muted);
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  font-weight: 450;
+}
+.mist-brand-emblem {
+  background: var(--mist-inverse);
+  color: var(--mist-inverse-ink);
+  border-color: var(--mist-line);
+  box-shadow: none;
+}
+.mist-top-hint,
+.mist-panel-meta,
+.mist-bottomline,
+.mist-light .mist-bottomline {
+  color: var(--mist-muted);
+}
+.mist-window-buttons,
+.mist-panel,
+.mist-light .mist-panel {
+  border-color: var(--mist-line);
+}
+.mist-window-control,
+.mist-window-close {
+  background: var(--mist-secondary) !important;
+  color: var(--mist-ink) !important;
+  border-color: var(--mist-line) !important;
+}
+.mist-window-control:hover,
+.mist-window-close:hover {
+  background: var(--mist-inverse) !important;
+  color: var(--mist-inverse-ink) !important;
+  border-color: var(--mist-ink) !important;
+}
+.mist-icon.active,
+.mist-composer,
+.mist-primary {
+  background: var(--mist-inverse) !important;
+  color: var(--mist-inverse-ink) !important;
+  border-color: var(--mist-line) !important;
+  box-shadow: none;
+}
+.mist-composer input {
+  color: var(--mist-inverse-ink);
+}
+.mist-composer input::placeholder {
+  color: var(--mist-inverse-ink);
+  opacity: 0.6;
+}
+.mist-panel-label > svg,
+.mist-light .mist-panel-label > svg,
+.mist-empty-mark,
+.mist-light .mist-empty-mark,
+.mist-dialog-heading > svg,
+.mist-key-status {
+  color: var(--mist-ink);
+}
+.mist-empty-mark {
+  border-color: var(--mist-line);
+}
+.mist-status i,
+.mist-status.live i,
+.mist-bottomline i {
+  background: var(--mist-ink);
+  box-shadow: none;
+}
+.mist-listen-footer,
+.mist-light .mist-listen-footer {
+  color: var(--mist-ink);
+  background: var(--mist-surface);
+}
+.mist-listen-footer .mist-start,
+.mist-listen-footer .mist-start.recording,
+.mist-light .mist-start {
+  color: var(--mist-ink);
+  border-color: var(--mist-ink);
+  box-shadow: none;
+}
+.mist-context-dot {
+  background: var(--mist-ink);
+}
+.mist-dialog-heading p,
+.mist-settings-hint,
+.mist-context-actions > span,
+.mist-permission-row p,
+.mist-permission-help p,
+.mist-setup-logo span,
+.mist-shortcuts p,
+.mist-setup .mist-continue {
+  color: var(--mist-muted) !important;
+}
+.mist-settings-grid label,
+.mist-auto-answer {
+  color: var(--mist-ink);
+}
+.mist-settings-grid input:not([type="range"]):not([type="checkbox"]),
+.mist-settings-grid select,
+.mist-context-editor {
+  color: var(--mist-ink);
+  background: var(--mist-secondary);
+  border-color: var(--mist-line);
+}
+.mist-app option {
+  color: var(--mist-ink);
+  background: var(--mist-surface);
+}
+.mist-permission-row > button {
+  background: var(--mist-secondary) !important;
+  color: var(--mist-ink);
+  border: 1px solid var(--mist-line) !important;
+}
+.mist-refresh,
+.mist-permission-help,
+.mist-shortcuts {
+  border-color: var(--mist-line) !important;
+}
+.mist-settings-grid input[type="range"],
+.mist-auto-answer input {
+  accent-color: var(--mist-ink);
+}
+.mist-toast,
+.mist-toast.error {
+  color: var(--mist-ink);
+  background: var(--mist-secondary);
+  border-color: var(--mist-ink);
+}
+.mist-app button:focus-visible,
+.mist-app input:focus-visible,
+.mist-app textarea:focus-visible,
+.mist-app select:focus-visible {
+  outline-color: var(--mist-ink);
+}
+.mist-note-list button.selected,
+.mist-request-tabs button.selected {
+  background: var(--mist-secondary);
+  border-color: var(--mist-ink);
+}
+.mist-message.user {
+  background: var(--mist-secondary);
+}
+.mist-dialog-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin: -16px -18px 0 0;
+  background: var(--mist-secondary) !important;
+  color: var(--mist-ink) !important;
+  border: 1px solid var(--mist-line) !important;
+  border-radius: 10px;
+  pointer-events: auto;
+}
+.mist-dialog-close:hover {
+  background: var(--mist-inverse) !important;
+  color: var(--mist-inverse-ink) !important;
+}
+/* Native drag regions behind a modal must never consume its close/control clicks. */
+.mist-modal-backdrop,
+.mist-modal-backdrop *,
+.mist-toast,
+.mist-toast * {
+  -webkit-app-region: no-drag;
+}
+.mist-requests-view {
+  display: flex;
+}
+.mist-requests-view > .mist-transcript {
+  display: none;
+}
+.mist-requests-view > .mist-requests {
+  flex: 1;
+  padding: 24px;
+}
+@media (max-width: 720px) {
+  .mist-brand-tagline {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+.mist-language-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px;
+}
+/* Custom menus remain inside the protected webview instead of opening OS popups. */
+.mist-select {
+  position: relative;
+  display: inline-flex;
+}
+.mist-select > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--mist-line);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: var(--mist-secondary);
+  user-select: none;
+}
+.mist-select-options {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  min-width: 145px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid var(--mist-line);
+  border-radius: 10px;
+  background: var(--mist-surface);
+  color: var(--mist-ink);
+  box-shadow: 0 8px 24px #0004;
+}
+.mist-select-options > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 9px;
+  gap: 14px;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 12px;
+  text-align: left;
+}
+.mist-select-options > button.highlighted,
+.mist-select-options > button:hover {
+  background: var(--mist-inverse);
+  color: var(--mist-inverse-ink);
+}
+.mist-select,
+.mist-select * {
+  -webkit-app-region: no-drag;
+}
+.mist-topline,
+.mist-hub,
+.mist-rail,
+.mist-listen-footer,
+.mist-composer-tools {
+  user-select: none;
+}
+.mist-panels.listen-hidden {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: 760px;
+  align-self: center;
+}
+.mist-panels.listen-hidden .mist-ask {
+  margin-bottom: 0;
+}
+.mist-app.mist-collapsed {
+  min-height: 0;
+  height: 100dvh;
+  justify-content: flex-start;
+}
+.mist-app.browser.mist-collapsed {
+  height: auto;
+  min-height: 190px;
+}
+.mist-new-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid var(--mist-line) !important;
+  border-radius: 8px;
+  font-size: 11px !important;
+  white-space: nowrap;
+}
+.mist-new-chat:hover {
+  background: var(--mist-secondary);
+}
+/* Notes, saved conversations, and privacy controls share the monochrome system. */
+.ryx-library {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px 18px 12px 0;
+  gap: 18px;
+}
+.ryx-library-sidebar {
+  width: 135px;
+  flex-shrink: 0;
+  overflow: auto;
+  border-right: 1px solid var(--mist-line);
+  padding-right: 12px;
+}
+.ryx-library-sidebar > button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--mist-muted);
+}
+.ryx-library-sidebar > button.selected {
+  background: var(--mist-secondary);
+  color: var(--mist-ink);
+}
+.ryx-library-sidebar hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--mist-line);
+}
+.ryx-nav-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--mist-muted);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 8px 0;
+}
+.ryx-nav-title button {
+  display: flex;
+  padding: 3px;
+}
+.ryx-library-sidebar p {
+  font-size: 10px;
+  color: var(--mist-muted);
+  padding: 8px;
+}
+.ryx-folder-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0;
+}
+.ryx-folder-form input {
+  min-width: 0;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--mist-line);
+  border-radius: 6px;
+  background: var(--mist-secondary);
+  color: var(--mist-ink);
+  font-size: 10px;
+}
+.ryx-library-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.ryx-library-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+.ryx-library-heading h2 {
+  font-size: 15px;
+  margin: 0;
+}
+.ryx-library-heading p {
+  font-size: 10px;
+  margin: 3px 0 0;
+  color: var(--mist-muted);
+}
+.ryx-library-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.ryx-library-tools .mist-search {
+  flex: 1;
+  margin: 0;
+  min-width: 90px;
+}
+.ryx-library-tools > button {
+  padding: 5px;
+  display: flex;
+  border-radius: 6px;
+}
+.ryx-library-tools > button[aria-pressed="true"] {
+  background: var(--mist-secondary);
+}
+.ryx-note-cards {
+  display: grid;
+  gap: 10px;
+}
+.ryx-note-cards.grid {
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+}
+.ryx-note-cards.list {
+  grid-template-columns: 1fr;
+}
+.ryx-note-card {
+  border: 1px solid var(--mist-line) !important;
+  border-radius: 12px;
+  padding: 15px 12px !important;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.ryx-note-card:hover {
+  background: var(--mist-secondary);
+}
+.ryx-note-card > svg {
+  color: var(--mist-muted);
+}
+.ryx-note-card strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  word-break: break-word;
+}
+.ryx-note-card span {
+  font-size: 10px;
+  color: var(--mist-muted);
+}
+.ryx-note-card p {
+  font-size: 10px;
+  color: var(--mist-muted);
+  margin: 0;
+  line-height: 1.6;
+  max-height: 48px;
+  overflow: hidden;
+}
+.ryx-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--mist-muted) !important;
+}
+.ryx-note-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.ryx-note-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border-radius: 6px;
+  font-size: 9px;
+}
+.ryx-note-toolbar button:hover {
+  background: var(--mist-secondary);
+}
+.ryx-note-title {
+  background: transparent;
+  color: var(--mist-ink);
+  border: 0;
+  font-size: 22px !important;
+  font-weight: 600;
+  padding: 6px 0;
+  margin: 0 0 9px;
+  min-width: 0;
+}
+.ryx-note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--mist-muted);
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ryx-note-meta label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ryx-note-meta select {
+  background: var(--mist-secondary);
+  color: var(--mist-ink);
+  border: 1px solid var(--mist-line);
+  border-radius: 6px;
+  max-width: 130px;
+  padding: 4px;
+}
+.ryx-tags-input {
+  border: 0;
+  border-bottom: 1px solid var(--mist-line);
+  background: transparent;
+  color: var(--mist-muted);
+  padding: 9px 0;
+  font-size: 11px !important;
+  margin: 6px 0 12px;
+}
+.ryx-note-content {
+  flex: 1;
+  min-height: 175px;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: var(--mist-ink);
+  font-size: 12px !important;
+  line-height: 1.8;
+}
+.ryx-ai-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--mist-line);
+  border-radius: 10px;
+  padding: 9px;
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+.ryx-ai-edit input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  color: var(--mist-ink);
+  border: 0;
+  font-size: 11px;
+}
+.ryx-ai-edit button {
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--mist-secondary);
+}
+.ryx-delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--mist-line);
+  border-radius: 9px;
+  font-size: 11px;
+  margin-bottom: 12px;
+}
+.ryx-delete-confirm button {
+  text-decoration: underline;
+}
+.ryx-print-preview {
+  display: none;
+}
+.ryx-clear-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px !important;
+  margin-bottom: 10px;
+}
+.mist-select-options.opens-down {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+.ryx-session-time {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+  opacity: 1 !important;
+}
+.ryx-request-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  opacity: 1 !important;
+  color: var(--mist-ink) !important;
+}
+.ryx-request-title small {
+  font-size: 10px;
+  color: var(--mist-muted);
+  font-weight: 400;
+}
+.mist-requests-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+.mist-requests-view > .mist-transcript {
+  display: flex;
+  padding: 20px 16px;
+}
+.mist-requests-view > .mist-requests {
+  padding: 20px 16px;
+}
+.ryx-selected-request {
+  font-size: 12px;
+  line-height: 1.8;
+  overflow: auto;
+}
+.ryx-selected-request h3 {
+  font-size: 14px;
+  margin: 6px 0 14px;
+  font-weight: 600;
+}
+.ryx-question-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--mist-muted);
+}
+.ryx-selected-request .mist-soft-button {
+  margin-top: 14px;
+}
+.hljs-keyword,
+.hljs-built_in,
+.hljs-title {
+  font-weight: 650;
+  color: var(--mist-ink);
+}
+.hljs-string,
+.hljs-number,
+.hljs-literal {
+  color: var(--mist-muted);
+}
+.hljs-comment {
+  font-style: italic;
+  opacity: 0.6;
+}
+.ryx-selected-request pre {
+  background: var(--mist-secondary);
+  padding: 12px;
+  border: 1px solid var(--mist-line);
+  border-radius: 10px;
+  overflow: auto;
+}
+.mist-composer-tools {
+  flex-wrap: wrap;
+}
+.ryx-screen-source {
+  max-width: 135px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px !important;
+  padding: 4px 7px !important;
+}
+.ryx-screen-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.ryx-screen-grid button {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--mist-line);
+  border-radius: 10px;
+  font-size: 12px;
+}
+.ryx-screen-grid img {
+  width: 100%;
+  border-radius: 6px;
+  aspect-ratio: 5 / 3;
+  object-fit: contain;
+  background: var(--mist-secondary);
+}
+.ryx-chat-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ryx-chat-history button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--mist-line);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+}
+.ryx-chat-history button:hover {
+  background: var(--mist-secondary);
+}
+.ryx-chat-history strong {
+  font-size: 12px;
+  display: block;
+  font-weight: 500;
+}
+.ryx-chat-history small {
+  display: block;
+  font-size: 10px;
+  color: var(--mist-muted);
+  margin-top: 4px;
+}
+.ryx-privacy h2 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ryx-privacy p {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--mist-muted);
+  margin: 0;
+}
+.ryx-privacy-card {
+  padding: 14px;
+  border: 1px solid var(--mist-line);
+  border-radius: 11px;
+  margin: 12px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+}
+.ryx-privacy-card .mist-select {
+  flex-shrink: 0;
+  font-size: 10px;
+}
+.ryx-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.ryx-per-mode {
+  display: flex;
+  gap: 18px;
+  font-size: 11px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+.ryx-per-mode label,
+.ryx-retain-audio {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+.ryx-retain-audio {
+  margin: 12px 0;
+}
+.ryx-privacy input[type="checkbox"] {
+  accent-color: var(--mist-ink);
+}
+.ryx-privacy-actions {
+  margin: 23px 0;
+}
+.ryx-privacy-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.ryx-privacy-actions button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  border: 1px solid var(--mist-line);
+  border-radius: 8px;
+  padding: 8px;
+}
+.ryx-wipe-confirm {
+  padding: 14px;
+  border: 1px solid var(--mist-ink);
+  border-radius: 10px;
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ryx-wipe-confirm > input {
+  padding: 8px;
+  background: var(--mist-secondary);
+  color: var(--mist-ink);
+  border: 1px solid var(--mist-line);
+  border-radius: 6px;
+}
+.ryx-wipe-confirm label {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ryx-activity {
+  border-top: 1px solid var(--mist-line);
+  padding-top: 18px;
+}
+.ryx-activity ol {
+  list-style: none;
+  padding: 0;
+  max-height: 240px;
+  overflow: auto;
+  margin-top: 13px;
+}
+.ryx-activity li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 10px;
+  border-bottom: 1px solid var(--mist-line);
+  padding: 8px 0;
+}
+.ryx-activity time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--mist-muted);
+}
+@media (max-width: 1050px) {
+  .ryx-library-sidebar {
+    width: 115px;
+  }
+  .ryx-library {
+    gap: 10px;
+    padding-right: 12px;
+  }
+  .mist-requests-view {
+    grid-template-columns: 1fr;
+  }
+  .ryx-note-cards.grid {
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .ryx-library {
+    min-height: 500px;
+  }
+  .ryx-library-sidebar {
+    width: 100px;
+  }
+  .ryx-note-toolbar {
+    gap: 2px;
+  }
+  .ryx-note-toolbar button {
+    padding: 4px;
+  }
+  .ryx-note-content {
+    min-height: 220px;
+  }
+  .ryx-privacy-card {
+    flex-direction: column;
+  }
+  .ryx-note-cards.grid {
+    grid-template-columns: 1fr;
+  }
+}
+.mist-setup-heading > p {max-width: 650px; margin: 12px auto 20px; color: var(--mist-muted); font-size: 13px; line-height: 1.6;}
+.ryx-permission-error {padding: 12px 16px; border: 1px solid var(--mist-line); border-radius: 12px; color: var(--mist-ink); font-size: 13px; line-height: 1.6;}
+.mist-permission-row > button:disabled {cursor: default; opacity: .65;}
+@media (max-height: 820px) {
+  .mist-setup {padding: 24px 40px 20px;}
+  .mist-setup-heading {margin-bottom: 22px;}
+  .mist-setup-logo span {margin-bottom: 14px;}
+  .mist-setup h1 {margin-bottom: 12px;}
+  .mist-setup-heading > p {font-size: 12px; line-height: 1.45; margin: 8px auto 14px;}
+  .mist-permission-rows {gap: 20px;}
+  .mist-permission-help {margin-top: 16px;}
+  .mist-continue {margin-top: 16px;}
+}
+.ryx-capture-check {display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0; font-size: 12px; color: var(--mist-muted);}
+.ryx-response-timing {font-size: 10px; color: var(--mist-muted); white-space: nowrap;}
+.ryx-attached-preview {display: inline-flex; align-items: center; gap: 8px; font-size: 11px;}
+.ryx-attached-preview img {width: 84px; height: 48px; object-fit: contain; border: 1px solid var(--mist-line); border-radius: 5px;}
+.ryx-full-image {width: 100%; height: auto; object-fit: contain; border-radius: 10px;}
+.mist-composer-tools {flex-wrap: wrap;}
+.ryx-screen-active {border: 1px solid var(--mist-ink) !important; font-weight: 650;}
+.mist-bottomline > span {max-width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ryx-keys-guide {font-size: 13px; line-height: 1.6;}
+.ryx-keys-guide ol {padding-left: 20px;}
+.ryx-keys-guide li {margin: 16px 0;}
+.ryx-keys-guide h2 {font-size: 15px;}
+.ryx-keys-guide a {color: var(--mist-ink); text-decoration: underline; text-underline-offset: 3px;}
+.mist-settings-grid label > .mist-select-menu {width: 100%;}
+.ryx-support-card {margin: 16px 0; padding: 16px; border: 1px solid var(--mist-line); border-radius: 12px;}
+.ryx-support-card h2 {font-size: 15px; margin: 0 0 8px;}
+.ryx-support-card p {font-size: 12px; line-height: 1.7; color: var(--mist-muted); margin: 0;}
+.ryx-support-card a {color: var(--mist-ink); text-decoration: underline; text-underline-offset: 3px;}
+.ryx-control-tooltip {position: fixed; width: 260px; max-width: calc(100vw - 20px); padding: 10px 12px; border: 1px solid var(--mist-line); border-radius: 9px; background: var(--mist-surface); color: var(--mist-ink); box-shadow: 0 5px 22px #0004; z-index: 10000; pointer-events: none; font-size: 11px; line-height: 1.5; white-space: normal;}
+.ryx-quick-language {display: flex; align-items: center; gap: 5px;}
+.ryx-quick-language .mist-select {max-width: 210px;}
+.ryx-quick-language button > span {max-width: 175px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.ryx-answer-style {display: inline-flex; align-items: center; gap: 7px; padding-left: 10px; border-left: 1px solid var(--mist-line); white-space: nowrap; font-size: 10px; color: var(--mist-muted);}
+/* Brief launch reveal. All motion stays inside the protected native window. */
+.ryx-intro {position: fixed; inset: 0; z-index: 20000; overflow: hidden; display: grid; place-items: center; color: #fff; background: #050505; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+.ryx-intro.light {background: #fff; color: #050505;}
+.ryx-intro-top {position: absolute; top: 30px; left: 36px; right: 36px; display: flex; justify-content: space-between; align-items: center; font-size: 9px; letter-spacing: 2.5px; opacity: .65;}
+.ryx-intro-top button {appearance: none; border: 1px solid currentColor; color: inherit; background: transparent; border-radius: 50%; width: 30px; height: 30px; font-size: 21px; cursor: pointer;}
+.ryx-intro-stage {position: relative; text-align: center; padding: 36px 20px;}
+.ryx-intro-orb {position: absolute; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(ellipse,#ffffff26 0%,#ffffff0b 40%,transparent 70%); filter: blur(36px); animation: ryx-orb-reveal 4s ease-out both; pointer-events: none;}
+.light .ryx-intro-orb {background: radial-gradient(ellipse,#00000012 0%,#00000005 40%,transparent 70%);}
+.ryx-intro-icon {display: inline-flex; position: relative; align-items: center; justify-content: center; width: 64px; height: 64px; background: #fff; color: #050505; border-radius: 18px; font-size: 49px; font-weight: 850; line-height: 1; letter-spacing: -5px; padding-right: 9px; animation: ryx-intro-rise 900ms cubic-bezier(.16,1,.3,1) both;}
+.ryx-intro-icon > span {position: absolute; right: 7px; top: 5px; font-size: 26px; letter-spacing: 0;}
+.light .ryx-intro-icon {color: #fff; background: #050505;}
+.ryx-intro h1 {font-size: clamp(50px,8.5vw,120px); font-weight: 750; line-height: 1.05; letter-spacing: -.07em; margin: 26px 0 20px;}
+.ryx-intro h1 > span {display: inline-block; animation: ryx-letter-reveal 1.1s cubic-bezier(.16,1,.3,1) both;}
+.ryx-intro h1 > .ryx-intro-dot {animation-delay: 650ms; opacity: .65;}
+.ryx-intro-stage > p {font-size: clamp(14px,1.8vw,23px); font-weight: 400; letter-spacing: -.4px; margin: 0; opacity: .6; animation: ryx-intro-rise 1.2s 450ms cubic-bezier(.16,1,.3,1) both;}
+.ryx-intro-rule {height: 1px; width: 70px; margin: 28px auto 0; background: currentColor; opacity: .25; animation: ryx-rule-reveal 1.5s 500ms both;}
+.ryx-intro-enter {position: absolute; bottom: 35px; border: 1px solid #ffffff30; background: #ffffff0a; border-radius: 24px; padding: 11px 18px; color: inherit; font-size: 11px; letter-spacing: .3px; cursor: pointer; animation: ryx-intro-rise 1s 700ms both;}
+.light .ryx-intro-enter {border-color: #0003; background: #00000005;}
+.ryx-intro-enter span {margin-left: 10px;}
+.ryx-intro button:focus-visible {outline: 2px solid currentColor; outline-offset: 5px;}
+@keyframes ryx-letter-reveal {from {opacity: 0; transform: translateY(25px); filter: blur(12px);} to {opacity: 1; transform: translateY(0); filter: blur(0);}}
+@keyframes ryx-intro-rise {from {opacity: 0; transform: translateY(14px);} to {opacity: 1; transform: translateY(0);}}
+@keyframes ryx-orb-reveal {from {opacity: 0; transform: scale(.8) translateY(40px);} to {opacity: 1; transform: scale(1.1) translateY(0);}}
+@keyframes ryx-rule-reveal {from {opacity: 0; transform: scaleX(0);} to {opacity: .25; transform: scaleX(1);}}
+@media (prefers-reduced-motion: reduce) {.ryx-intro,.ryx-intro * {animation: none !important; filter: none !important;}}
+
+/* Motion follows real mounting/state changes; none blocks interaction. */
+.mist-app {animation:ryx-workspace-enter 300ms cubic-bezier(.16,1,.3,1) both;}
+.mist-panel {animation:ryx-panel-enter 220ms cubic-bezier(.16,1,.3,1) both;}
+.mist-app button {transition:background 160ms,color 160ms,border-color 160ms,transform 120ms;}
+.mist-app button:active:not(:disabled) {transform:scale(.97);}
+.mist-status {display:inline-flex;align-items:center;gap:6px;line-height:1.2;}
+.mist-bottomline button {display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1.2;}
+.mist-bottomline > span {display:inline-flex;align-items:center;gap:6px;}
+.ryx-live-preview {display:flex;align-items:center;gap:10px;margin:8px 0;font-size:11px;color:var(--mist-muted);}
+.ryx-live-preview img {width:100px;height:62px;object-fit:contain;border-radius:7px;border:1px solid var(--mist-line);}
+.ryx-live-preview small {display:block;font-size:10px;margin-top:3px;}
+@keyframes ryx-workspace-enter {from{opacity:0;transform:scale(.98) translateY(4px);}to{opacity:1;transform:none;}}
+@keyframes ryx-panel-enter {from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+@media(prefers-reduced-motion:reduce){.mist-app,.mist-panel {animation:none;} .mist-app button {transition:none;} .mist-app button:active:not(:disabled) {transform:none;}}
+
+/* Settings: one readable section at a time, with stable header/footer. */
+.mist-dialog[data-panel="settings"] {width:720px;max-width:100%;height:min(720px,calc(100dvh - 40px));padding:0;overflow:hidden;display:flex;flex-direction:column;}
+.mist-dialog[data-panel="settings"] > .mist-dialog-close {position:absolute;inset:18px 18px auto auto;margin:0;float:none;width:34px;height:34px;min-height:34px;display:grid;place-items:center;z-index:5;}
+.ryx-settings {display:flex;flex-direction:column;min-height:0;height:100%;color:var(--mist-ink);font-size:13px;}
+.ryx-settings-heading {padding:28px 66px 20px 28px;flex-shrink:0;}
+.ryx-settings-heading h1 {font-size:25px;line-height:1.2;font-weight:650;letter-spacing:-.7px;margin:0 0 7px;}
+.ryx-settings-heading p {font-size:12px;color:var(--mist-muted);margin:0;}
+.ryx-settings-tabs {display:flex;gap:4px;padding:0 24px 18px;flex-shrink:0;border-bottom:1px solid var(--mist-line);}
+.ryx-settings-tabs button {padding:9px 13px;border-radius:8px;color:var(--mist-muted);font-size:12px;white-space:nowrap;}
+.ryx-settings-tabs button[aria-selected="true"] {background:var(--mist-inverse);color:var(--mist-inverse-ink);}
+.ryx-settings-content {padding:22px 26px;overflow-y:auto;min-height:0;flex:1;scrollbar-gutter:stable;}
+.ryx-settings-card {border:1px solid var(--mist-line);border-radius:13px;padding:18px;margin-bottom:16px;background:var(--mist-surface);}
+.ryx-settings-card:last-child {margin-bottom:0;}
+.ryx-settings-card h2 {font-size:13px;font-weight:650;line-height:1.4;margin:0 0 15px;}
+.ryx-settings-card p {font-size:12px;line-height:1.65;color:var(--mist-muted);margin:0 0 13px;overflow-wrap:anywhere;}
+.ryx-settings-card p:last-child {margin-bottom:0;}
+.ryx-settings-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;}
+.ryx-settings-fields label,.ryx-settings-advanced {display:flex;flex-direction:column;gap:8px;font-size:12px;min-width:0;line-height:1.4;}
+.ryx-settings-wide {grid-column:1/-1;}
+.ryx-settings-fields .mist-select,.ryx-settings-fields .mist-select > button {width:100%;}
+.ryx-settings-fields .mist-select > button {min-height:39px;justify-content:space-between;padding:10px 11px;}
+.ryx-settings-fields input,.ryx-settings-advanced input {min-width:0;width:100%;border:1px solid var(--mist-line);border-radius:8px;background:var(--mist-secondary);color:var(--mist-ink);padding:11px;font-size:12px;}
+.ryx-settings p.ryx-settings-caption {font-size:11px;line-height:1.6;margin-top:12px;}
+.ryx-settings details {border-top:1px solid var(--mist-line);padding-top:12px;margin-top:14px;font-size:11px;}
+.ryx-settings summary {cursor:pointer;color:var(--mist-muted);}
+.ryx-settings-advanced {margin-top:14px;}
+.ryx-settings-option {display:flex;align-items:center;justify-content:space-between;gap:20px;cursor:pointer;padding:14px 0;}
+.ryx-settings-option:first-child {padding-top:0;}
+.ryx-settings-option:last-child {padding-bottom:0;}
+.ryx-settings-option + .ryx-settings-option {border-top:1px solid var(--mist-line);}
+.ryx-settings-option strong {font-size:12px;font-weight:550;display:block;line-height:1.5;}
+.ryx-settings-option small {display:block;font-size:11px;line-height:1.6;color:var(--mist-muted);margin-top:4px;}
+.ryx-settings-option input {flex:0 0 17px;width:17px;height:17px;accent-color:var(--mist-ink);margin:0;}
+.ryx-settings-actions {display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
+.ryx-settings .mist-soft-button {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:8px 11px;border:1px solid var(--mist-line);border-radius:8px;font-size:11px;}
+.ryx-settings-footer {display:flex;align-items:center;justify-content:space-between;gap:15px;padding:16px 26px;border-top:1px solid var(--mist-line);background:var(--mist-surface);flex-shrink:0;}
+.ryx-settings-footer > span {font-size:10px;color:var(--mist-muted);}
+.ryx-settings-footer .mist-primary {display:inline-flex;gap:8px;align-items:center;justify-content:center;min-width:88px;padding:10px 14px;border-radius:9px;}
+.ryx-settings-range {display:block;padding-top:17px;margin-top:17px;border-top:1px solid var(--mist-line);font-size:12px;}
+.ryx-settings-range span {display:flex;justify-content:space-between;margin-bottom:14px;}
+.ryx-settings-range input {width:100%;accent-color:var(--mist-ink);}
+.ryx-settings-shortcuts {margin:0;}
+.ryx-settings-shortcuts div {display:flex;align-items:center;justify-content:space-between;gap:20px;padding:9px 0;font-size:11px;border-bottom:1px solid var(--mist-line);}
+.ryx-settings-shortcuts div:last-child {border:0;}
+.ryx-settings-shortcuts dd {margin:0;color:var(--mist-muted);}
+.ryx-settings a {text-decoration:underline;text-underline-offset:3px;}
+.ryx-settings-error {padding:11px;border:1px solid var(--mist-line);border-radius:8px;color:var(--mist-ink)!important;}
+.ryx-intro-top button {display:grid;place-items:center;padding:0;width:32px;height:32px;box-sizing:border-box;line-height:1;flex:0 0 32px;}
+.ryx-intro-top button svg {display:block;width:16px;height:16px;}
+.ryx-intro-stage {width:100%;box-sizing:border-box;justify-self:center;}
+@media(max-width:560px){.ryx-settings-fields {grid-template-columns:minmax(0,1fr);}.ryx-settings-tabs {padding:0 14px 14px;gap:2px;}.ryx-settings-tabs button {padding:8px 9px;font-size:11px;}.ryx-settings-content {padding:16px;}.ryx-settings-heading {padding-left:20px;}.ryx-settings-footer {padding:14px 18px;}}
+.ryx-settings-footer .mist-primary {width:auto;flex:0 0 auto;min-height:36px;}
+.ryx-settings-footer > span {flex:1;white-space:nowrap;}
+
+/* Windows onboarding and connection controls, mounted only by the Windows UI. */
+.ryx-api-wizard { animation: ryx-api-arrive .35s ease both; display: grid; gap: 18px; }
+.ryx-api-wizard h1 { font-size: clamp(26px,4vw,40px); letter-spacing: -.04em; margin: 0; }
+.ryx-api-card h2 { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.ryx-api-card h2 small { margin-left:auto; font-size:12px; font-weight:400; opacity:.65; }
+.ryx-api-card label { display:grid; gap:8px; margin-top:14px; }
+.ryx-api-key-row { display:flex; gap:8px; }
+.ryx-api-key-row input { min-width:0; flex:1; }
+.ryx-api-card input,.ryx-api-card select { padding:12px; border:1px solid var(--mist-border,#555); border-radius:12px; background:transparent; color:inherit; }
+.ryx-api-card select option { background:#181818; color:#fff; }
+.ryx-api-card details { margin:12px 0; }
+.ryx-api-card li { margin:8px 0; }
+.ryx-api-card a { text-decoration:underline; }
+.ryx-api-card .ryx-settings-actions { margin-top:16px; flex-wrap:wrap; }
+@keyframes ryx-api-arrive { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+@media(prefers-reduced-motion:reduce) { .ryx-api-wizard { animation:none; } }
+
+.ryx-windows-launch {position:fixed;inset:0;z-index:20000;opacity:1;transform:scale(1);transition:opacity 250ms ease,transform 250ms cubic-bezier(.2,.8,.2,1);}
+.ryx-windows-launch.leaving {opacity:0;transform:scale(.985);pointer-events:none;}
+@media(prefers-reduced-motion:reduce){.ryx-windows-launch {transition:none;}}
+
+/* Windows update controls mount only on Windows; no Mac surface changes. */
+.ryx-windows-update-notice { position: fixed; right: 20px; bottom: 20px; z-index: 70; width: min(390px, calc(100vw - 40px)); padding: 18px; border: 1px solid var(--mist-line, #777); border-radius: 20px; background: var(--mist-panel, #151515); color: var(--mist-ink, #fff); box-shadow: 0 12px 40px #0004; animation: ryxUpdateEnter 220ms ease-out both; }
+.ryx-windows-update-notice h2 { margin: 0 0 8px; font-size: 15px; }
+.ryx-windows-update-notice p { font-size: 13px; line-height: 1.5; }
+.ryx-windows-update-notice progress, .ryx-settings-card progress { width: 100%; accent-color: currentColor; transition: width 180ms ease; }
+@keyframes ryxUpdateEnter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ryx-windows-update-notice { animation: none; } }
