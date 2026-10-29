@@ -47,7 +47,10 @@ export function initWindowsUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
   autoUpdater.autoRunAppAfterInstall = true;
-  autoUpdater.allowPrerelease = false;
+  const beta = /-beta\.\d+$/.test(app.getVersion());
+  autoUpdater.channel = beta ? "beta" : "latest";
+  autoUpdater.allowPrerelease = beta;
+  // Setting channel enables downgrades in electron-updater; reset it afterwards.
   autoUpdater.allowDowngrade = false;
   autoUpdater.on("checking-for-update", () => broadcast({ type: "checking" }));
   autoUpdater.on("update-available", info => {

@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: windows-release-${{ github.ref }}
+  group: windows-release
   cancel-in-progress: false
 jobs:
   build:
@@ -17,7 +17,6 @@ jobs:
       stable: ${{ steps.tag.outputs.stable }}
     env:
       RELEASE_TAG: ${{ github.ref_name }}
-      APPROVED_SOURCE_SHA: ${{ vars.APPROVED_SOURCE_SHA }}
       RYX_WINDOWS_PUBLISHER: ${{ vars.WINDOWS_PUBLISHER_NAME }}
       WINDOWS_CERT_THUMBPRINT: ${{ vars.WINDOWS_CERT_THUMBPRINT }}
       WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
@@ -79,6 +78,7 @@ jobs:
             work/windows-ci/*-Windows-Setup.exe.blockmap
             work/windows-ci/*-Windows-Setup.exe.sha256
             work/windows-ci/latest.yml
+            work/windows-ci/beta.yml
   publish:
     needs: build
     runs-on: ubuntu-latest

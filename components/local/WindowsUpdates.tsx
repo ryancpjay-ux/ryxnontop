@@ -34,16 +34,17 @@ export default function WindowsUpdates({ save, active = false, compact = false }
       finally { setApplying(false); }
     });
   };
+  const beta = /-beta\.\d+$/.test(current);
   const description = status.type === "downloaded" ? `Version ${status.version} is ready. Restart when you're finished to install it.`
     : status.type === "downloading" ? `Downloading update · ${Math.round(status.percent ?? 0)}%`
-    : status.type === "checking" ? "Checking stable GitHub Releases…"
+    : status.type === "checking" ? `Checking ${beta ? "beta test" : "stable"} GitHub Releases…`
     : status.type === "available" ? `A new version of ryxnontop is available: ${status.version}.`
-    : status.type === "not-available" ? "You have the latest stable Windows release."
+    : status.type === "not-available" ? `You have the latest ${beta ? "beta test" : "stable"} Windows release.`
     : status.type === "error" ? status.message ?? "Could not check for updates. Check your connection and retry."
-    : "Stable releases only. Updates preserve your saved credentials, preferences and history.";
+    : `${beta ? "Beta test releases" : "Stable releases"} only. Updates preserve your saved credentials, preferences and history.`;
   if (compact && (active || !["available", "downloaded", "downloading"].includes(status.type) || later === `${status.type}:${status.version}`)) return null;
   return <section className={compact ? "ryx-windows-update-notice" : "ryx-settings-card"} aria-label="Windows updates"><h2>{compact ? "ryxnontop update" : "Windows updates"}</h2>
-    {!compact && <p className="ryx-settings-caption">Installed {current || "…"} · Stable channel</p>}
+    {!compact && <p className="ryx-settings-caption">Installed {current || "…"} · {beta ? "Beta test" : "Stable"} channel</p>}
     <p role="status">{description}</p>
     {status.summary && <p className="ryx-settings-caption">{status.summary}</p>}
     {status.type === "downloading" && <progress aria-label="Update download progress" max={100} value={status.percent ?? 0} />}
