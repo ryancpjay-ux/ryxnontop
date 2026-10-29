@@ -1,3 +1,7 @@
+// This file exercises the legacy Mac branch. Windows has dedicated fixtures.
+const actualPlatformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+Object.defineProperty(process, 'platform', { value: 'darwin' });
+require('node:test').after(() => Object.defineProperty(process, 'platform', actualPlatformDescriptor));
 const{test}=require('node:test');const assert=require('node:assert/strict');const Module=require('node:module');const original=Module._load;
 const source={id:'screen:1:0',name:'Display'};
 Module._load=function(name,...args){if(name==='electron')return{desktopCapturer:{getSources:async()=>[source]}};return original.call(this,name,...args)};

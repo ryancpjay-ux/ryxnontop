@@ -1,3 +1,7 @@
+// This file exercises the legacy Mac branch. Windows has dedicated fixtures.
+const actualPlatformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+Object.defineProperty(process, 'platform', { value: 'darwin' });
+require('node:test').after(() => Object.defineProperty(process, 'platform', actualPlatformDescriptor));
 const{test}=require('node:test');const assert=require('node:assert/strict');const Module=require('node:module');const original=Module._load;const routes=new Map();let options,resized;
 const image={isEmpty:()=>false,getSize:()=>({width:3840,height:2160}),resize:value=>{resized=value;return{toDataURL:()=> 'data:image/png;base64,aGVsbG8='}},toDataURL:()=> 'data:image/png;base64,aGVsbG8='};
 const display={id:1,size:{width:1920,height:1080},scaleFactor:2};

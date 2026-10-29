@@ -44,7 +44,7 @@ test('restores both keys from a newly-created store and never writes plaintext',
   const bytes = fs.readFileSync(file);
   assert.equal(bytes.includes(Buffer.from(keys.geminiKey)), false);
   assert.equal(bytes.includes(Buffer.from(keys.deepgramKey)), false);
-  assert.equal(fs.statSync(file).mode & 0o777, 0o600);
+  if (process.platform !== "win32") assert.equal(fs.statSync(file).mode & 0o777, 0o600);
   assert.deepEqual(createCredentialStore(() => directory, cryptography).load(), keys);
 });
 test('edits and clearing individual keys survive reopening', t => {

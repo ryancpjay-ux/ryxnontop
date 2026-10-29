@@ -1,3 +1,7 @@
+// This file exercises the legacy Mac branch. Windows has dedicated fixtures.
+const actualPlatformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+Object.defineProperty(process, 'platform', { value: 'darwin' });
+require('node:test').after(() => Object.defineProperty(process, 'platform', actualPlatformDescriptor));
 // Offline contract tests for the local provider bridge. No real keys or network calls.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');

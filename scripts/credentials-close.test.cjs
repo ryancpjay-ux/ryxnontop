@@ -1,3 +1,7 @@
+// This file exercises the legacy Mac branch. Windows has dedicated fixtures.
+const actualPlatformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+Object.defineProperty(process, 'platform', { value: 'darwin' });
+require('node:test').after(() => Object.defineProperty(process, 'platform', actualPlatformDescriptor));
 // Synthetic-only integration test of the synchronous final-save IPC route.
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
