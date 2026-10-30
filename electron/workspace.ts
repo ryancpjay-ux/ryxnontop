@@ -12,6 +12,7 @@ const allowed = [
   "provider",
   "providerModels",
   "keysGuideCompleted",
+  "setupStarted",
   "opacity",
   "source",
   "language",

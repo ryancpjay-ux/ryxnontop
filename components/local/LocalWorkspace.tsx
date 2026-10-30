@@ -1,12 +1,12 @@
 "use client";
-import WindowsUpdates from "./WindowsUpdates";
+import DesktopUpdates from "./DesktopUpdates";
+import { setupAlreadyComplete } from "@/lib/desktop-onboarding";
 import { saveWindowsUpdateState } from "@/lib/windows-update-save";
 
 import {WindowsCapturePanel} from "./WindowsCapturePanel";
 import {useLiveScreen} from "./useLiveScreen";
 import SettingsPanel from "./SettingsPanel";
 import WindowsApiSetup, { type WindowsApiProps } from "./WindowsApiSetup";
-import IntroSplash from "./IntroSplash";
 import WindowsOpeningIntro from "./WindowsOpeningIntro";
 import ControlTooltips from "./ControlTooltips";
 
@@ -186,7 +186,6 @@ export function LocalWorkspace() {
   const [quitRequested,setQuitRequested]=useState(false);
   const [listenFailure,setListenFailure]=useState("");
   const [introVisible, setIntroVisible] = useState(true);
-  const [windowsPlatform, setWindowsPlatform] = useState(false);
   const finishIntro = useCallback(() => setIntroVisible(false), []);
   const [desktop, setDesktop] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -220,6 +219,7 @@ export function LocalWorkspace() {
     Record<Provider, string>
   >({ ...defaultModels });
   const [keysGuideCompleted, setKeysGuideCompleted] = useState(false);
+  const [setupStarted, setSetupStarted] = useState(false);
   const providerKey =
     provider === "gemini"
       ? geminiKey
@@ -394,7 +394,6 @@ export function LocalWorkspace() {
   useEffect(() => {
     mounted.current = true;
     setDesktop(Boolean(window.electronAPI));
-    setWindowsPlatform(window.electronAPI?.platform === "win32");
     if (window.electronAPI && window.innerHeight < 400)
       void window.electronAPI.windowSetSize(1180, 760);
     let cancelled = false;
@@ -448,7 +447,8 @@ export function LocalWorkspace() {
             [restoredProvider]: restoredModel,
           });
           setKeysGuideCompleted(saved.keysGuideCompleted === true);
-          if (window.electronAPI?.platform === "win32" && saved.keysGuideCompleted !== true) setDialog("keys-guide");
+          setSetupStarted(saved.setupStarted === true);
+
           setOpacity(saved.opacity ?? 96);
           setSource(saved.source ?? "system");
           setLanguage(saved.language ?? "multi");
@@ -476,7 +476,7 @@ export function LocalWorkspace() {
     };
   }, []);
   useEffect(() => {
-    if ((introVisible && window.electronAPI?.platform !== "win32") || keysLoaded) return;
+    if (keysLoaded) return;
     let cancelled = false;
     if (!window.localCopilot?.loadKeys) {
       setKeysLoaded(true);
@@ -527,6 +527,20 @@ export function LocalWorkspace() {
       cancelled = true;
     };
   }, [introVisible, keysLoaded]);
+
+  const onboardingRouted = useRef(false);
+  useEffect(() => {
+    if (!ready || !keysLoaded || onboardingRouted.current) return;
+    onboardingRouted.current = true;
+    if (setupAlreadyComplete(window.electronAPI?.platform, keysGuideCompleted, Boolean(providerKey.trim()), setupStarted)) {
+      setKeysGuideCompleted(true);
+      setDialog(current => current === "keys-guide" ? null : current);
+    } else { setSetupStarted(true); setDialog("keys-guide"); }
+  }, [ready, keysLoaded, keysGuideCompleted, providerKey, setupStarted]);
+  useEffect(() => {
+    void window.localCopilot?.setActivity?.(audio.state !== "idle").catch(() => {});
+    return () => { void window.localCopilot?.setActivity?.(false).catch(() => {}); };
+  }, [audio.state]);
 
   const saveProviderKeys = useCallback(async () => {
     if (!keysLoaded || !window.localCopilot?.saveKeys) return;
@@ -645,6 +659,7 @@ export function LocalWorkspace() {
       provider,
       providerModels,
       keysGuideCompleted,
+      setupStarted,
       opacity,
       source,
       language,
@@ -703,6 +718,7 @@ export function LocalWorkspace() {
     provider,
     providerModels,
     keysGuideCompleted,
+    setupStarted,
     opacity,
     source,
     language,
@@ -1740,7 +1756,7 @@ export function LocalWorkspace() {
   const answerBusy = Boolean(busy && busy !== "notes");
   const currentRequest = requests.find((r) => r.id === selected);
   const status = listenStatus({audio:audio.state,interim:audio.interim,pending:autoPendingCount,generating:busy==="listen",streaming:busy==="listen" && responseTiming?.first!=null,error:Boolean(listenFailure),completed:requests.some(r=>r.status==="answered")});
-  async function prepareWindowsUpdate() {
+  async function prepareDesktopUpdate() {
     await saveWindowsUpdateState({
       isActive: () => Boolean(requestId.current) || audio.state !== "idle",
       saveKeys: saveProviderKeys,
@@ -1754,20 +1770,8 @@ export function LocalWorkspace() {
     provider, model, language, onProvider: changeProvider, onModel: setModel, save: saveProviderKeys,
   };
 
-  const windowsIntro = windowsPlatform && introVisible ? <WindowsOpeningIntro light={light} ready={ready && keysLoaded} firstLaunch={!keysGuideCompleted}
+  const windowsIntro = introVisible ? <WindowsOpeningIntro light={light} ready={ready && keysLoaded} firstLaunch={!keysGuideCompleted}
     onDone={finishIntro} onQuit={() => { void saveProviderKeys().then(() => window.electronAPI?.windowClose()).catch(error => setError(error.message)); }} /> : null;
-  if (!windowsPlatform && ready && introVisible)
-    return (
-      <IntroSplash
-        light={light}
-        onDone={finishIntro}
-        onQuit={() => {
-          void saveProviderKeys()
-            .then(() => window.electronAPI?.windowClose())
-            .catch((error) => setError(error.message));
-        }}
-      />
-    );
   if (!ready || !keysLoaded)
     return (
       <>{windowsIntro}<div className="mist-loading" aria-hidden={windowsIntro ? true : undefined}>
@@ -2691,7 +2695,7 @@ export function LocalWorkspace() {
           </button>
         </div>
       )}
-      {windowsPlatform && !introVisible && !dialog && keysLoaded && <WindowsUpdates compact save={prepareWindowsUpdate} active={Boolean(busy) || audio.state !== "idle"} />}
+      {desktop && keysLoaded && <DesktopUpdates compact save={prepareDesktopUpdate} active={Boolean(busy) || audio.state !== "idle"} suspended={introVisible || Boolean(dialog)} />}
       {dialog && (
         <div
           className="mist-modal-backdrop"
@@ -2762,8 +2766,8 @@ export function LocalWorkspace() {
                   Done
                 </button>
               </>
-            ) : dialog === "keys-guide" && window.electronAPI?.platform === "win32" ? (
-              <WindowsApiSetup {...windowsApiProps} resume={!keysGuideCompleted} onFinish={() => { setKeysGuideCompleted(true); setDialog(null); setNotice("API setup saved securely for this Windows account."); }} />
+            ) : dialog === "keys-guide" && Boolean(window.electronAPI) ? (
+              <WindowsApiSetup {...windowsApiProps} resume={!keysGuideCompleted} onFinish={() => { setKeysGuideCompleted(true); setDialog(null); setNotice("API setup saved securely on this device."); }} />
             ) : dialog === "keys-guide" ? (
               <div className="ryx-keys-guide">
                 <h1 id="mist-dialog-title">Connect your API keys.</h1>
@@ -2854,7 +2858,7 @@ export function LocalWorkspace() {
                 </button>
               </div>
             ) : dialog === "settings" ? (
-              <SettingsPanel onUpdateSave={prepareWindowsUpdate} windowsApi={windowsApiProps} provider={provider} model={model} providerKey={providerKey} deepgramKey={deepgramKey} keysLoaded={keysLoaded} keyStatus={keyStatus}
+              <SettingsPanel onUpdateSave={prepareDesktopUpdate} windowsApi={windowsApiProps} provider={provider} model={model} providerKey={providerKey} deepgramKey={deepgramKey} keysLoaded={keysLoaded} keyStatus={keyStatus}
                onProvider={changeProvider} onModel={changeModel} onProviderKey={provider==="gemini"?setGeminiKey:provider==="openai"?setOpenaiKey:setAnthropicKey} onDeepgramKey={setDeepgramKey}
                source={source} onSource={setSource} languageControl={<SpokenLanguageMenu value={language} onChange={setLanguage}/>}
                restartControl={audio.state!=="idle" && activeAudioSettings && (source!==activeAudioSettings.source||language!==activeAudioSettings.language) ? <button className="mist-soft-button" onClick={async()=>{try{await saveProviderKeys();restartCapture.current=true;if(requestId.current)void window.localCopilot?.cancel(requestId.current);audio.stop();setDialog(null);setNotice("Saving and restarting Listen with selected settings");}catch(error){setError(error instanceof Error?error.message:"Could not save settings.");}}}>Apply and restart Listen</button>:null}

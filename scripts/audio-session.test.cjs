@@ -34,9 +34,9 @@ function fixture(devices, os){
   return {session,stream,events,requests:()=>requests};
 }
 const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
-test('one media acquisition starts 200ms audio chunks and pause/resume preserves the stream',async()=>{
+test('one media acquisition starts 100ms audio chunks and pause/resume preserves the stream',async()=>{
   const f=fixture();await f.session.start('synthetic-key','microphone','en');
-  assert.equal(f.requests(),1);assert.equal(Recorder.recorders[0].timeslice,200);
+  assert.equal(f.requests(),1);assert.equal(Recorder.recorders[0].timeslice,100);
   assert.equal(f.events.at(-1),'state:live');
   f.session.pause();assert.equal(Recorder.recorders[0].state,'paused');assert.equal(f.events.at(-1),'state:paused');
   f.session.pause();assert.equal(f.events.at(-1),'state:live');

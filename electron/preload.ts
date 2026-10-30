@@ -16,13 +16,14 @@ type UpdaterStatusPayload =
   | { type: "checking" }
   | { type: "available"; version: string; summary?: string }
   | { type: "not-available"; version: string }
-  | { type: "downloading"; percent: number }
+  | { type: "downloading"; percent: number; version?: string; summary?: string }
   | { type: "downloaded"; version: string; summary?: string }
   | { type: "error"; message: string };
 
 contextBridge.exposeInMainWorld("localCopilot", {
+  setActivity: (active: boolean) => ipcRenderer.invoke("local:activity", active),
+  testConnection: (input: unknown) => ipcRenderer.invoke("desktop:connection-test", input),
   ...(process.platform === "win32" ? {
-    testConnection: (input: unknown) => ipcRenderer.invoke("windows:connection-test", input),
     transcriptionOpen: (input: unknown) => ipcRenderer.invoke("windows:transcription-open", input),
     transcriptionSend: (id: string, data: ArrayBuffer | string) => ipcRenderer.invoke("windows:transcription-send", id, data),
     transcriptionClose: (id: string) => ipcRenderer.invoke("windows:transcription-close", id),
@@ -113,6 +114,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   appQuit: () => ipcRenderer.invoke("app-quit"),
   appRelaunch: () => ipcRenderer.invoke("app-relaunch"),
+  updaterGetPreferences: () => ipcRenderer.invoke("updater:preferences"),
+  updaterSavePreferences: (input: unknown) => ipcRenderer.invoke("updater:preferences-save", input),
+  updaterDownload: () => ipcRenderer.invoke("updater:download"),
   updaterGetVersion: () => ipcRenderer.invoke("updater:get-version"),
   updaterGetStatus: () => ipcRenderer.invoke("updater:get-status"),
   updaterCheck: () => ipcRenderer.invoke("updater:check"),
@@ -169,6 +173,9 @@ export interface ElectronAPI {
   onWindowFocus?: (callback: () => void) => () => void;
   appQuit: () => Promise<void>;
   appRelaunch: () => Promise<void>;
+  updaterGetPreferences?: () => Promise<{automatic: boolean; backgroundDownload: boolean}>;
+  updaterSavePreferences?: (input: {automatic: boolean; backgroundDownload: boolean}) => Promise<{automatic: boolean; backgroundDownload: boolean}>;
+  updaterDownload?: () => Promise<void>;
   updaterGetVersion: () => Promise<string>;
   updaterGetStatus: () => Promise<UpdaterStatusPayload>;
   updaterCheck: () => Promise<void>;

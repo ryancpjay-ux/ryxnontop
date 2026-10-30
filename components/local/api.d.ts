@@ -2,6 +2,7 @@ export {};
 declare global {
   interface Window {
     localCopilot?: {
+      setActivity?: (active: boolean) => Promise<void>;
       testConnection?: (input: { service: "openai" | "gemini" | "anthropic" | "deepgram"; key?: string; model: string; language?: string }) => Promise<{ connected: boolean; message: string; firstMs: number }>;
       transcriptionOpen?: (input: { id: string; language: string }) => Promise<void>;
       transcriptionSend?: (id: string, data: ArrayBuffer | string) => Promise<void>;

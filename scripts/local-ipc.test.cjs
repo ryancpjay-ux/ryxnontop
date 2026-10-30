@@ -106,3 +106,5 @@ test('reused request IDs cancel the old request without losing the new cancellat
   await secondRejected;assert.equal(signals[1].aborted,true);
  } finally {global.fetch=originalFetch}
 });
+
+test('Mac Listen activity blocks updates until stopped and clears if its renderer closes',()=>{const {EventEmitter}=require('node:events');const sender=new EventEmitter();sender.id=7;sender.getURL=()=> 'file:///app/index.html';const e={sender};const api=require('../electron/ipc/local.js');assert.equal(api.isDesktopWorkActive(),false);handlers.get('local:activity')(e,true);assert.equal(api.isDesktopWorkActive(),true);handlers.get('local:activity')(e,false);assert.equal(api.isDesktopWorkActive(),false);handlers.get('local:activity')(e,true);assert.equal(sender.listenerCount('destroyed'),1);sender.emit('destroyed');assert.equal(api.isDesktopWorkActive(),false);assert.throws(()=>handlers.get('local:activity')(e,'yes'),/Invalid/)});

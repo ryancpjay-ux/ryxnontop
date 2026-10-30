@@ -7,6 +7,7 @@ export default defineConfig([
       ".next/**",
       "out/**",
       "dist/**",
+      "work/**",
       "node_modules/**",
       "electron/**/*.js",
       "realtime-worker-api/**",

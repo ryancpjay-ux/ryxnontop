@@ -82,7 +82,7 @@ export async function testWindowsConnection(service: ConnectionService, key: str
     throw new Error("The selected model returned no text. Choose another supported model and retry.");
   } catch (error) {
     if (signal.aborted) throw new Error("Connection test timed out. Check the provider status and network.");
-    if (error instanceof TypeError) throw new Error("Network connection failed. Check Windows network, proxy, or firewall settings.");
+    if (error instanceof TypeError) throw new Error("Network connection failed. Check your network, proxy, or firewall settings.");
     throw error;
   }
 }

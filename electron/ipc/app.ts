@@ -1,4 +1,4 @@
-import { downloadWindowsUpdate, getWindowsUpdatePreferences, setWindowsUpdatePreferences } from "../windowsUpdater";
+import { downloadDesktopUpdate, getUpdatePreferences, setUpdatePreferences } from "../desktopUpdater";
 import {handleTrusted} from "../security/ipc";
 import { app, ipcMain } from "electron";
 
@@ -23,10 +23,14 @@ export function registerAppIpc(): void {
     app.quit();
   });
 
+  handleTrusted("updater:preferences", () => getUpdatePreferences());
+  handleTrusted("updater:preferences-save", (_event, input: unknown) => setUpdatePreferences(input));
+  handleTrusted("updater:download", () => downloadDesktopUpdate());
+
   if (process.platform === "win32") {
-    handleTrusted("windows:updater-preferences", () => getWindowsUpdatePreferences());
-    handleTrusted("windows:updater-preferences-save", (_event, input: unknown) => setWindowsUpdatePreferences(input));
-    handleTrusted("windows:updater-download", () => downloadWindowsUpdate());
+    handleTrusted("windows:updater-preferences", () => getUpdatePreferences());
+    handleTrusted("windows:updater-preferences-save", (_event, input: unknown) => setUpdatePreferences(input));
+    handleTrusted("windows:updater-download", () => downloadDesktopUpdate());
   }
 
   handleTrusted("updater:get-version", () => getAppVersion());
@@ -36,7 +40,7 @@ export function registerAppIpc(): void {
   handleTrusted("updater:check", () => checkForUpdates(true));
 
   handleTrusted("updater:install", () => {
-    if (process.platform === "win32" && require("./local").isWindowsWorkActive()) throw new Error("Finish Listen and Ask before restarting to install the update.");
+    if (require("./local").isDesktopWorkActive()) throw new Error("Finish Listen and Ask before restarting to install the update.");
     installDownloadedUpdate();
   });
 }

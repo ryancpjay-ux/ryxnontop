@@ -9,7 +9,6 @@ import {
 } from "electron";
 import { isTrustedOrigin } from "../security/origin";
 
-import { geminiErrorMessage } from "../providerErrors";
 import {
   providerRequest,
   providerChunk,
@@ -28,17 +27,40 @@ import type WebSocket from "ws";
 
 const requests = new Map<string, AbortController>();
 let networkEnabled = true;
+const activeRenderers = new Set<number>();
+const trackedRenderers = new WeakSet<object>();
 let windowsWorkActive = () => false;
-export function isWindowsWorkActive() { return windowsWorkActive(); }
+export function isDesktopWorkActive() { return requests.size > 0 || activeRenderers.size > 0 || windowsWorkActive(); }
+export const isWindowsWorkActive = isDesktopWorkActive;
 
 export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
   const credentials = process.platform === "win32" ? createWindowsCredentialStore() : createCredentialStore();
   const workspace = createWorkspaceStore();
+  handleTrusted("local:activity", (event, active: unknown) => {
+    if (typeof active !== "boolean") throw new Error("Invalid activity status.");
+    const sender = event.sender;
+    if (active && !activeRenderers.has(sender.id)) {
+      activeRenderers.add(sender.id);
+      if (!trackedRenderers.has(sender)) {
+        trackedRenderers.add(sender);
+        sender.once("destroyed", () => activeRenderers.delete(sender.id));
+      }
+    } else if (!active) activeRenderers.delete(sender.id);
+  });
   const saveKeys = (value: unknown) => credentials.save(process.platform === "win32" ? mergeWindowsKeys(value, credentials.load()) : value);
   const openingSockets = new Map<string, { owner: number; controller: AbortController }>();
   const sockets = new Map<string, { socket: WebSocket; owner: number }>();
   if (process.platform === "win32") {
     windowsWorkActive = () => requests.size > 0 || openingSockets.size > 0 || sockets.size > 0;
+  }
+  if (["win32", "darwin"].includes(process.platform)) {
+    handleTrusted("desktop:connection-test", async (_event, input: { service: "openai" | "gemini" | "anthropic" | "deepgram"; key?: string; model: string; language?: string }) => {
+      if (!networkEnabled) throw new Error("Enable network access in Privacy before testing connections.");
+      if (!input || !["openai", "gemini", "anthropic", "deepgram"].includes(input.service)) throw new Error("Invalid connection service.");
+      return testWindowsConnection(input.service, connectionKey(input.service, input.key, credentials.load()), input.model, input.language);
+    });
+  }
+  if (process.platform === "win32") {
     handleTrusted("windows:connection-test", async (_event, input: { service: "openai" | "gemini" | "anthropic" | "deepgram"; key?: string; model: string; language?: string }) => {
       if (!networkEnabled) throw new Error("Enable network access in Privacy before testing connections.");
       if (!input || !["openai", "gemini", "anthropic", "deepgram"].includes(input.service)) throw new Error("Invalid connection service.");
@@ -106,7 +128,7 @@ export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
   // the explicit guard below and are aborted when this switch is changed.
   if (app?.whenReady)
     void app.whenReady().then(() => {
-      if (process.platform === "win32") require("../updater").initAutoUpdater(getWindow);
+      require("../updater").initAutoUpdater(getWindow);
       session.defaultSession.webRequest.onBeforeRequest(
         { urls: ["http://*/*", "https://*/*", "ws://*/*", "wss://*/*"] },
         (details, callback) => {
@@ -251,7 +273,7 @@ export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
       const timeout = setTimeout(() => {timedOut=true;controller.abort();}, 45000);
       try {
         const provider = input.provider ?? "gemini";
-        const prepared = providerRequest(process.platform === "win32" ? {...input, windowsLatency: true, key: connectionKey(provider, input.key, credentials.load())} : {...input, windowsLatency: false});
+        const prepared = providerRequest(process.platform === "win32" ? {...input, windowsLatency: true, key: connectionKey(provider, input.key, credentials.load())} : {...input, windowsLatency: true});
         const response = await fetch(prepared.url, {
           method: "POST",
           signal: controller.signal,
@@ -266,7 +288,7 @@ export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
             /* Non-JSON proxy errors. */
           }
           throw new Error(
-            (process.platform === "win32" ? windowsProviderError : geminiErrorMessage)(
+            windowsProviderError(
               response.status,
               response.headers?.get("retry-after") ?? null,
               body,
@@ -282,14 +304,13 @@ export function registerLocalIpc(getWindow: () => BrowserWindow | null) {
         let answer = "";
         const decoder = new TextDecoder();
         const consume = (line: string) => {
-          const windows = process.platform === "win32";
-          if (!line.startsWith(windows ? "data:" : "data: ")) return;
-          const payload = line.slice(windows ? 5 : 6).trimStart();
+          if (!line.startsWith("data:")) return;
+          const payload = line.slice(5).trimStart();
           if (payload.trim() === "[DONE]") return;
           const data = JSON.parse(payload);
           const { text, modelVersion } = providerChunk(provider, data);
           answer += text;
-          if ((!windows || text || modelVersion) && !event.sender.isDestroyed())
+          if ((text || modelVersion) && !event.sender.isDestroyed())
             event.sender.send("local:chunk", {
               id: input.id,
               text,

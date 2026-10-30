@@ -30,7 +30,7 @@ function ServiceCard({ service, p, onStatus, guided = false }: { service: Servic
     const attempt = ++generation.current; const testedSignature = signature;
     setTesting(true); setStatus(null); onStatus?.(false);
     try {
-      if (!window.localCopilot?.testConnection) throw new Error("Open the Windows desktop app to test API connections.");
+      if (!window.localCopilot?.testConnection) throw new Error("Open the desktop app to test API connections.");
       const result = await window.localCopilot.testConnection({ service, key, model: p.model, language: p.language });
       if (attempt !== generation.current || latest.current !== testedSignature) return;
       setStatus({ signature: testedSignature, success: true, message: `${result.message} · ${(result.firstMs / 1000).toFixed(2)}s to first response` }); onStatus?.(true);
@@ -70,14 +70,14 @@ export default function WindowsApiSetup(p: WindowsApiProps & { onFinish: () => v
   const [error, setError] = useState("");
   const provider = p.provider;
   const titles = ["Welcome to ryxnontop", "Choose your AI provider", "Connect your AI provider", "Set Up Deepgram", "Your AI Setup", "You're ready."];
-  const finish = async () => { setSaving(true); try { await p.save(); try { localStorage.removeItem("ryxnontop-windows-setup-step"); } catch { /* Optional progress cache. */ } p.onFinish(); } catch { setError("Could not save securely. Check Windows storage access and try again."); } finally { setSaving(false); } };
+  const finish = async () => { setSaving(true); try { await p.save(); try { localStorage.removeItem("ryxnontop-windows-setup-step"); } catch { /* Optional progress cache. */ } p.onFinish(); } catch { setError("Could not save securely. Check secure storage access and try again."); } finally { setSaving(false); } };
   return <div className="ryx-api-wizard" key={step}><span className="ryx-settings-caption">RYXNONTOP · {step + 1} / 6</span><h1 id="mist-dialog-title">{titles[step]}</h1>
     {step === 0 && <p>Let’s get your AI assistant ready.</p>}
     {step === 1 && <><p>Choose one provider for answers in Listen and Ask.</p><div className="ryx-settings-actions">{(["openai", "gemini", "anthropic"] as const).map(value => <button className="mist-soft-button" aria-pressed={provider === value} key={value} onClick={() => { setAiReady(false); p.onProvider(value); p.onModel(defaultModels[value]); }}>{provider === value && <Check size={16} />} {names[value]}{value === "gemini" ? " (Recommended)" : ""}</button>)}</div></>}
     {step === 2 && <ServiceCard guided service={provider} p={p} onStatus={setAiReady} />}
     {step === 3 && <><ServiceCard guided service="deepgram" p={p} onStatus={setSpeechReady} /><p className="ryx-settings-caption">Deepgram is needed for Listen. Ask works without it. You can configure speech recognition later in API Connections.</p></>}
     {step === 4 && <section className="ryx-settings-card"><p>{names[provider]} — {aiReady ? "Connected" : "Needs testing"}</p>{(["openai", "gemini", "anthropic"] as const).filter(service => service !== provider).map(service => <p key={service}>{names[service]} — {p.keys[fields[service]] ? "Saved · not tested" : "Not configured"}</p>)}<p>Deepgram — {speechReady ? "Connected" : p.keys.deepgramKey ? "Saved · not tested" : "Not configured"}</p><p>{speechReady ? "Ask and Listen connections are ready. Audio permission is requested when you start Listen." : "Ask is ready. Set up Deepgram before starting Listen."}</p></section>}
-    {step === 5 && <p>Your keys will be encrypted for this Windows account. You can replace or remove them in Settings → API Connections.</p>}
+    {step === 5 && <p>Your keys are stored securely on this device. You can replace or remove them in Settings → API Connections.</p>}
     {error && <p role="alert" className="ryx-settings-error">{error}</p>}<div className="ryx-settings-actions">{step > 0 && <button className="mist-soft-button" onClick={() => setStep(step - 1)}>Back</button>}<button className="mist-primary" disabled={saving || (step === 2 && !aiReady)} onClick={() => step === 5 ? void finish() : (() => { if (step === 1 && p.provider !== provider) { p.onProvider(provider); p.onModel(defaultModels[provider]); } setStep(step + 1); })()}>{saving ? "Saving…" : step === 0 ? "Get Started" : step === 5 ? "Enter workspace" : step === 3 && !speechReady ? "Continue with Ask only" : "Continue"}<ArrowRight size={16} /></button></div>
   </div>;
 }

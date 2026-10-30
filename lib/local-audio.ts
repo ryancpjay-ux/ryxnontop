@@ -157,9 +157,9 @@ export class LocalAudioSession {
       model: "nova-3",
       language: this.language,
       smart_format: "true",
-      ...(this.platform.os === "win32" ? { no_delay: "true" } : {}),
+      no_delay: "true",
       interim_results: "true",
-      endpointing: this.platform.os === "win32" ? "200" : "250",
+      endpointing: "200",
       utterance_end_ms: "1000",
       vad_events: "true",
     });
@@ -267,7 +267,7 @@ export class LocalAudioSession {
       if (socket.readyState === 1 && this.paused)
         socket.send(JSON.stringify({ type: "KeepAlive" }));
     }, 5000);
-    recorder.start(this.platform.os === "win32" ? 100 : 200);
+    recorder.start(100);
     if (this.paused) recorder.pause();
     if (this.retainAudio && !this.localRecorder) {
       const local = new Recorder(this.audioStream!, options);

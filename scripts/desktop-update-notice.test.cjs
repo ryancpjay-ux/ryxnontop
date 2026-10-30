@@ -1,0 +1,5 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');
+const {UpdateNoticeSession}=require('../lib/update-notice.ts');
+const {setupAlreadyComplete}=require('../lib/desktop-onboarding.ts');
+test('one notification per version survives checks, phase changes and panel remounts; new launches reset it',()=>{const session=new UpdateNoticeSession();assert.equal(session.claim(''),false);assert.equal(session.claim('0.21.0'),true);for(let n=0;n<5;n++)assert.equal(session.claim('0.21.0'),false);assert.equal(session.claim('0.22.0'),true);assert.equal(session.claim('0.21.0'),false);assert.equal(new UpdateNoticeSession().claim('0.21.0'),true)});
+test('legacy configured Mac profiles migrate without onboarding; unfinished setup resumes on both platforms',()=>{assert.equal(setupAlreadyComplete('darwin',false,true,false),true);for(const platform of ['darwin','win32']){assert.equal(setupAlreadyComplete(platform,true,false,true),true);assert.equal(setupAlreadyComplete(platform,false,false,false),false);assert.equal(setupAlreadyComplete(platform,false,true,true),false)}assert.equal(setupAlreadyComplete('win32',false,true,false),false)});

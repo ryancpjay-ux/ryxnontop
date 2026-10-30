@@ -1,5 +1,5 @@
-I fixed the Windows in-app update restart path. After choosing Restart and install, the updater now requests a silent installation and reopens ryxnontop. The installer also recognizes updater restarts from earlier beta clients, so those clients can receive this fix through the app. Regular manual installation keeps its existing assisted setup.
+I am testing the shared desktop updater on Windows. It checks my GitHub repository shortly after launch and periodically while open, keeps notices from repeating for the same version during a session, and preserves explicit download/restart controls and the existing beta update channel.
 
-I tested the beta.6 → beta.7 in-app update in Parallels: the application downloaded the update, installed it and reopened automatically on beta.7. My saved keys and history remained intact. Ask was also confirmed working on beta.6 before the update. All 133 automated tests passed on the native Windows runner. This verifies this update roundtrip; broader provider, audio and capture acceptance testing remains separate.
+The beta.6 → beta.7 restart fix remains in place. Saved data is written before installation, and native activity guards prevent updating during Ask or Listen.
 
-This is an unsigned experimental Windows release, excluded from stable clients. macOS and existing Mac assets are unchanged.
+This is an unsigned Windows test candidate. The Mac implementation is in source, but no Mac update package is published by this beta. Signing/notarization and a real Mac update test are still pending. Stable clients ignore this release.

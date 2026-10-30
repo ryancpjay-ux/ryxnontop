@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import IntroSplash from "./IntroSplash";
 import { WindowsLaunchGate } from "@/lib/windows-launch";
 
-/** Reuses the existing visual intro; only Windows receives automatic launch routing. */
+/** Both desktop platforms reuse the existing visual intro and launch gate. */
 export default function WindowsOpeningIntro({ light, ready, firstLaunch, onDone, onQuit }: {
   light: boolean; ready: boolean; firstLaunch: boolean; onDone: () => void; onQuit: () => void;
 }) {

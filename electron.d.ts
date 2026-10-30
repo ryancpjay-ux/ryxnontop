@@ -16,7 +16,7 @@ type UpdaterStatusPayload =
   | { type: "checking" }
   | { type: "available"; version: string; summary?: string }
   | { type: "not-available"; version: string }
-  | { type: "downloading"; percent: number }
+  | { type: "downloading"; percent: number; version?: string; summary?: string }
   | { type: "downloaded"; version: string; summary?: string }
   | { type: "error"; message: string };
 
@@ -45,6 +45,9 @@ export interface ElectronAPI {
   onWindowFocus?: (callback: () => void) => () => void;
   appQuit: () => Promise<void>;
   appRelaunch: () => Promise<void>;
+  updaterGetPreferences?: () => Promise<{automatic: boolean; backgroundDownload: boolean}>;
+  updaterSavePreferences?: (input: {automatic: boolean; backgroundDownload: boolean}) => Promise<{automatic: boolean; backgroundDownload: boolean}>;
+  updaterDownload?: () => Promise<void>;
   updaterGetVersion?: () => Promise<string>;
   updaterGetStatus?: () => Promise<UpdaterStatusPayload>;
   updaterCheck?: () => Promise<void>;

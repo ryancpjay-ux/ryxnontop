@@ -7,7 +7,7 @@ import {
   modelPresets,
   type Provider,
 } from "@/lib/local-providers";
-import WindowsUpdates from "./WindowsUpdates";
+import DesktopUpdates from "./DesktopUpdates";
 import { WindowsApiConnections, type WindowsApiProps } from "./WindowsApiSetup";
 import { version } from "@/package.json";
 type Props = {
@@ -79,7 +79,7 @@ function Option({
 }
 export default function SettingsPanel(p: Props) {
   const [tab, setTab] = useState("AI & keys");
-  const tabs = ["AI & keys", ...(p.windows ? ["API Connections"] : []), "Listen", "Appearance", "General"];
+  const tabs = ["AI & keys", "API Connections", "Listen", "Appearance", "General"];
   return (
     <div className="ryx-settings">
       <header className="ryx-settings-heading">
@@ -110,7 +110,7 @@ export default function SettingsPanel(p: Props) {
         role="tabpanel"
         aria-labelledby={`settings-tab-${tab.split(" ")[0]}`}
       >
-        {tab === "API Connections" && p.windows && <WindowsApiConnections {...p.windowsApi} />}
+        {tab === "API Connections" && <WindowsApiConnections {...p.windowsApi} />}
         {tab === "AI & keys" && (
           <>
             <section className="ryx-settings-card">
@@ -246,7 +246,7 @@ export default function SettingsPanel(p: Props) {
                 </label>}
               </div>
               <p className="ryx-settings-caption">
-                {p.windows && <button className="mist-soft-button" onClick={() => setTab("API Connections")}>Manage Deepgram connection</button>}
+                <button className="mist-soft-button" onClick={() => setTab("API Connections")}>Manage Deepgram connection</button>
                 Live audio is sent to Deepgram while Listen runs. Source and
                 language changes apply to the next session.
               </p>
@@ -294,7 +294,7 @@ export default function SettingsPanel(p: Props) {
             <section className="ryx-settings-card">
               <h2>Opening animation</h2>
               <p>
-                {p.windows ? "The opening animation plays on every launch, then opens setup or your workspace. You can skip it. Motion follows your Windows accessibility preference." : "The intro waits until you choose Enter workspace. Motion follows your system’s Reduce Motion preference."}
+                The opening animation plays on every launch, then opens setup or your workspace. You can skip it. Motion follows your system’s Reduce Motion preference.
               </p>
               <button className="mist-soft-button" onClick={p.onReplay}>
                 Replay intro
@@ -304,7 +304,7 @@ export default function SettingsPanel(p: Props) {
         )}
         {tab === "General" && (
           <>
-            {p.windows && <WindowsUpdates save={p.onUpdateSave} active={p.active} />}
+            <DesktopUpdates save={p.onUpdateSave} active={p.active} />
             <section className="ryx-settings-card">
               <h2>Storage & diagnostics</h2>
               <Option
