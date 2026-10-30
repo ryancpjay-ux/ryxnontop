@@ -1,5 +1,5 @@
-I published this Windows beta to verify the in-app update path from beta.5 to beta.6. The application code is unchanged; this release changes the version and these test notes only.
+I fixed the Windows in-app update restart path. After choosing Restart and install, the updater now requests a silent installation and reopens ryxnontop. The installer also recognizes updater restarts from earlier beta clients, so those clients can receive this fix through the app. Regular manual installation keeps its existing assisted setup.
 
-Install beta.5 first, then use Settings → General → Windows updates → Check for updates. Download beta.6 inside the app, finish Listen and Ask, then choose Restart and install. Verify that the app reopens on beta.6 with the same credentials, onboarding status, settings and saved history.
+I am testing the complete beta.6 → beta.7 update in Parallels, including saved credentials, onboarding status, preferences and history. Automated tests and a successful build do not replace that installed-app test.
 
-This is an unsigned experimental Windows release. It is excluded from stable clients. macOS and all existing Mac assets are unchanged.
+This is an unsigned experimental Windows release, excluded from stable clients. macOS and existing Mac assets are unchanged.

@@ -29,6 +29,7 @@ async function main() {
       artifactName: 'ryxnontop-${version}-Windows-Setup.${ext}',
       win: { icon: 'public/icons/ryxnontop.ico', signExecutable: false },
       nsis: {
+        include: 'scripts/windows-updater.nsh',
         oneClick: false, perMachine: false, allowToChangeInstallationDirectory: true,
         createDesktopShortcut: 'always', createStartMenuShortcut: true,
         shortcutName: 'ryxnontop', runAfterFinish: false,

@@ -86,5 +86,5 @@ export function downloadWindowsUpdate(): Promise<void> {
   return downloading;
 }
 export function installWindowsUpdate() {
-  if (enabled() && state.type === "downloaded") autoUpdater.quitAndInstall(false, true);
+  if (enabled() && state.type === "downloaded") autoUpdater.quitAndInstall(true, true);
 }
