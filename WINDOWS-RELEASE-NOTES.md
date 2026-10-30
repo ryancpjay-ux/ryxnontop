@@ -1,11 +1,5 @@
-I added automated Windows releases and expanded the in-app updater. Windows can check stable releases automatically, show release notes and download progress, and restart to install when Listen and Ask are idle. Background downloads are optional. Saved credentials, onboarding and history stay in the existing Windows profile directory.
+I published this Windows beta to verify the in-app update path from beta.5 to beta.6. The application code is unchanged; this release changes the version and these test notes only.
 
-I also reduced Listen audio chunks from 200ms to 100ms, shortened speech endpoint detection from 250ms to 200ms, and enabled Deepgram's no-delay finalization. Number/date formatting may be simpler as a result. Fast OpenAI GPT-5.4-mini requests use no extra reasoning; other selected providers/models are preserved. Streaming avoids empty updates and long transcript preparation keeps exactly the same prompt text with less work.
+Install beta.5 first, then use Settings → General → Windows updates → Check for updates. Download beta.6 inside the app, finish Listen and Ask, then choose Restart and install. Verify that the app reopens on beta.6 with the same credentials, onboarding status, settings and saved history.
 
-This is an experimental Windows build, not a verified stable production update. Automated contract/UI tests do not prove live Gemini speed or a Windows upgrade roundtrip. Provider latency can fluctuate; I do not guarantee instant replies. Existing stable installations ignore this prerelease. Explicit beta application builds use a separate beta update feed for controlled testing. The installer is unsigned unless signing credentials were supplied to the workflow; do not treat it as a verified publisher-signed build.
-
-The first native Windows pipeline run found platform assumptions in older fixtures. I corrected those fixtures and Windows archive-path verification before retrying publication. Failed builds never publish a release.
-
-I added explicit credential and workspace saves before the installer starts, plus native guards that refuse installation while transcription or AI requests are active. Windows CI passed 132 automated tests, lint, type checks, native packaging and update-metadata verification.
-
-macOS and the existing Mac download are unchanged.
+This is an unsigned experimental Windows release. It is excluded from stable clients. macOS and all existing Mac assets are unchanged.
