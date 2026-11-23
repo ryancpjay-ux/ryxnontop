@@ -1,0 +1,1279 @@
+<title>Brawl Draft Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Lilita+One&display=swap">
+<style>
+/* Layout: broadcast-style draft board. Your team (blue) left, enemy (red) right, the analyst desk in the middle. */
+:root {
+  --bg: #0d0f1e;
+  --surface: #161a30;
+  --surface-2: #1f2442;
+  --line: #2d3358;
+  --fg: #eef0ff;
+  --muted: #9aa1c9;
+  --blue: #3f8cff;
+  --blue-soft: rgba(63, 140, 255, .16);
+  --red: #ff5064;
+  --red-soft: rgba(255, 80, 100, .15);
+  --star: #ffc83d;
+  --star-ink: #ffd76b;
+  --star-soft: rgba(255, 200, 61, .14);
+  --good: #3ddc97;
+  --bad: #ff7a7a;
+  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  --font-display: "Lilita One", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f2f3fa; --surface: #ffffff; --surface-2: #e9ebf6; --line: #d6d9ea; --fg: #14172d; --muted: #565c82;
+    --blue: #1f6feb; --blue-soft: rgba(31, 111, 235, .10); --red: #e1344b; --red-soft: rgba(225, 52, 75, .10);
+    --star: #f2b100; --star-ink: #8a5f00; --star-soft: rgba(242, 177, 0, .16); --good: #0f9a63; --bad: #d23b3b;
+    --shadow: 0 10px 30px rgba(20, 23, 45, .10);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f2f3fa; --surface: #ffffff; --surface-2: #e9ebf6; --line: #d6d9ea; --fg: #14172d; --muted: #565c82;
+  --blue: #1f6feb; --blue-soft: rgba(31, 111, 235, .10); --red: #e1344b; --red-soft: rgba(225, 52, 75, .10);
+  --star: #f2b100; --star-ink: #8a5f00; --star-soft: rgba(242, 177, 0, .16); --good: #0f9a63; --bad: #d23b3b;
+  --shadow: 0 10px 30px rgba(20, 23, 45, .10);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+  -webkit-font-smoothing: antialiased;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--star); outline-offset: 2px; }
+img { max-width: 100%; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1320px; margin: 0 auto; }
+
+/* Header */
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--bg);
+  display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+  padding-block: 14px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 { font-family: var(--font-display); font-weight: 400; font-size: 26px; letter-spacing: .5px; margin: 0; line-height: 1; }
+.brand h1 span { color: var(--star); }
+.brand small { color: var(--muted); font-size: 12.5px; }
+.tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.tabs button { border: 0; background: transparent; padding: 7px 14px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--fg); }
+.rank { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.rank select { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; color: var(--fg); }
+
+/* Map bar */
+.mapbar { display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; margin-top: 16px; }
+.mapcard {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 14px 8px 8px;
+  min-width: 0; flex: 1 1 280px;
+}
+.mapcard:hover { border-color: var(--star); }
+.mapthumb { width: 54px; height: 54px; border-radius: 10px; background: var(--surface-2); object-fit: contain; flex: none; }
+.mapcard .label { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.mapcard .name { font-family: var(--font-display); font-size: 21px; line-height: 1.1; }
+.mapcard .sub { font-size: 12.5px; color: var(--muted); }
+.mapcard .change { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--star-ink); white-space: nowrap; }
+.ctrl { display: flex; flex-direction: column; justify-content: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.ctrl .label { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.seg { display: flex; gap: 4px; background: var(--surface-2); border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 13.5px; color: var(--muted); white-space: nowrap; }
+.seg button[aria-pressed="true"].us { background: var(--blue); color: #fff; }
+.seg button[aria-pressed="true"].them { background: var(--red); color: #fff; }
+.btnrow { display: flex; gap: 6px; }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 12px; font-weight: 700; font-size: 13.5px; }
+.btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--star); border-color: var(--star); color: #1b1400; }
+
+/* Odds */
+.odds { margin-top: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.odds-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.odds-head .t { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.odds-head .why { font-size: 12.5px; color: var(--muted); }
+.odds-bar { display: flex; height: 34px; border-radius: 10px; overflow: hidden; margin-top: 8px; font-family: var(--font-display); font-size: 18px; }
+.odds-bar > div { display: flex; align-items: center; padding: 0 12px; color: #fff; transition: width .35s ease; min-width: 64px; }
+.odds-bar .b { background: var(--blue); }
+.odds-bar .r { background: var(--red); justify-content: flex-end; }
+
+/* Board */
+.board { display: grid; grid-template-columns: 236px minmax(0, 1fr) 236px; gap: 14px; margin-top: 14px; align-items: start; }
+.team { border-radius: 16px; padding: 12px; border: 1px solid var(--line); background: var(--surface); position: sticky; top: calc(env(safe-area-inset-top, 0px) + 76px); }
+.team.us { box-shadow: inset 0 3px 0 var(--blue); }
+.team.them { box-shadow: inset 0 3px 0 var(--red); }
+.team h2 { font-family: var(--font-display); font-weight: 400; font-size: 20px; margin: 2px 0 10px; display: flex; align-items: center; gap: 8px; }
+.team.us h2 { color: var(--blue); }
+.team.them h2 { color: var(--red); }
+.team h2 .fp { font-family: var(--font-body); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; background: var(--star-soft); color: var(--star-ink); padding: 2px 7px; border-radius: 999px; }
+.team .sect { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 10px 0 6px; }
+.bans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.picks { display: grid; gap: 8px; }
+.slot {
+  position: relative; display: flex; align-items: center; gap: 10px; width: 100%;
+  border: 1.5px dashed var(--line); background: var(--surface-2); border-radius: 12px; padding: 6px; text-align: left; min-height: 56px;
+}
+.slot.ban { justify-content: center; padding: 4px; min-height: 52px; aspect-ratio: 1; }
+.slot.filled { border-style: solid; }
+.team.us .slot.pick.filled { border-color: color-mix(in srgb, var(--blue) 55%, var(--line)); background: var(--blue-soft); }
+.team.them .slot.pick.filled { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); background: var(--red-soft); }
+.slot.active { border: 2px solid var(--star); box-shadow: 0 0 0 4px var(--star-soft); }
+.slot .portrait { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex: none; background: var(--bg); }
+.slot.ban .portrait { width: 100%; height: auto; aspect-ratio: 1; filter: grayscale(.85); opacity: .8; }
+.slot.ban.filled::after { content: ""; position: absolute; inset: 10%; background: linear-gradient(to top right, transparent calc(50% - 1.5px), var(--bad) calc(50% - 1.5px), var(--bad) calc(50% + 1.5px), transparent calc(50% + 1.5px)); pointer-events: none; }
+.slot .ord { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-family: var(--font-display); font-size: 20px; color: var(--muted); background: var(--bg); flex: none; }
+.slot .nm { font-weight: 700; font-size: 14px; line-height: 1.15; min-width: 0; }
+.slot .nm small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
+.slot .x { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 13px; line-height: 1; display: none; place-items: center; padding: 0; z-index: 1; }
+.slot.filled:hover .x, .slot.filled:focus-within .x, .slot.filled.active .x { display: grid; }
+.slot .plus { color: var(--muted); font-size: 12px; font-weight: 600; }
+
+/* Center desk */
+.desk { min-width: 0; display: grid; gap: 14px; }
+.prompt { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.prompt h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; line-height: 1.15; text-wrap: balance; }
+.prompt h3 .us { color: var(--blue); }
+.prompt h3 .them { color: var(--red); }
+.prompt p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+.recs { display: grid; gap: 8px; }
+.rec { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); overflow: hidden; }
+.rec.lead { border-color: var(--star); }
+.rec-main { display: grid; grid-template-columns: 26px 48px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; }
+.rec .rk { font-family: var(--font-display); font-size: 18px; color: var(--muted); text-align: center; }
+.rec.lead .rk { color: var(--star-ink); }
+.rec .portrait { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: var(--bg); }
+.rec .info { min-width: 0; }
+.rec .nm { font-weight: 800; font-size: 15.5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.badge { font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; background: var(--surface); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.badge.star { background: var(--star-soft); color: var(--star-ink); border-color: transparent; }
+.badge.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
+.badge.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.chip { font-size: 12px; color: var(--muted); background: var(--surface); border-radius: 8px; padding: 2px 7px; white-space: nowrap; }
+.chip b { font-weight: 800; }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+.rec .score { text-align: right; display: grid; gap: 4px; justify-items: end; }
+.rec .score .p { font-family: var(--font-display); font-size: 22px; line-height: 1; }
+.rec .score .l { font-size: 11px; color: var(--muted); }
+.rec .acts { display: flex; gap: 6px; }
+.rec .acts .btn { padding: 5px 10px; font-size: 12.5px; }
+.rec-more { border-top: 1px solid var(--line); padding: 10px 12px 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; font-size: 13px; }
+.rec-more h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rec-more ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.rec-more li { display: flex; justify-content: space-between; gap: 8px; }
+.rec-more li span:first-child { min-width: 0; }
+.rec-more .n { color: var(--muted); font-size: 12px; }
+.empty { color: var(--muted); font-size: 14px; padding: 8px 4px; }
+.showmore { margin-top: 8px; width: 100%; }
+.thinking { color: var(--muted); font-size: 13px; }
+
+/* Pool */
+.pool-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.pool-head h4 { margin: 0 auto 0 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.search { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; min-width: 0; width: 180px; }
+.pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.bc { display: grid; justify-items: center; gap: 3px; padding: 6px 4px; border-radius: 12px; border: 1px solid transparent; background: var(--surface-2); text-align: center; }
+.bc:hover:not(:disabled) { border-color: var(--star); }
+.bc img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: var(--bg); }
+.bc .n { font-size: 11.5px; font-weight: 700; line-height: 1.1; max-width: 100%; overflow-wrap: anywhere; }
+.bc .w { font-size: 11px; color: var(--muted); }
+.bc:disabled { opacity: .3; cursor: default; }
+.bc.nodata .w { font-style: italic; }
+
+/* Map picker */
+.overlay { position: fixed; inset: 0; z-index: 20; background: rgba(5, 6, 15, .62); display: grid; place-items: start center; padding: calc(env(safe-area-inset-top, 0px) + 24px) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; width: min(1000px, 100%); padding: 16px; box-shadow: var(--shadow); }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.sheet-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; }
+.modegroup h3 { margin: 14px 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.maps { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.mapt { display: grid; gap: 6px; padding: 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); text-align: left; }
+.mapt:hover, .mapt[aria-current="true"] { border-color: var(--star); }
+.mapt img { width: 100%; aspect-ratio: 1; object-fit: contain; background: var(--bg); border-radius: 8px; }
+.mapt .n { font-weight: 800; font-size: 14px; line-height: 1.15; }
+.mapt .g { font-size: 12px; color: var(--muted); }
+
+/* Stats */
+.stats-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; margin-top: 16px; align-items: start; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; position: sticky; top: 0; background: var(--surface); }
+th button { border: 0; background: none; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; }
+th button[aria-sort] { color: var(--fg); }
+tbody tr { cursor: pointer; }
+tbody tr:hover td, tbody tr[aria-selected="true"] td { background: var(--surface-2); }
+td .who { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+td .who img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; background: var(--bg); }
+.bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--star); vertical-align: middle; margin-left: 6px; opacity: .8; }
+.detail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 76px); }
+.detail h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; }
+.detail .hd { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.detail .hd img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: var(--bg); }
+.detail h4 { margin: 14px 0 6px; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.detail ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: 13.5px; }
+.detail li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.detail li img { width: 26px; height: 26px; border-radius: 6px; object-fit: cover; background: var(--bg); }
+.detail li .n { color: var(--muted); font-size: 12px; }
+
+/* About */
+.about { max-width: 760px; margin: 18px auto 0; display: grid; gap: 14px; }
+.about h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0; text-wrap: balance; }
+.about h3 { margin: 0 0 6px; font-size: 16px; }
+.about p, .about li { color: var(--muted); max-width: 68ch; }
+.about p b, .about li b { color: var(--fg); }
+.about ul { padding-left: 18px; margin: 6px 0 0; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.kpi { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.kpi .v { font-family: var(--font-display); font-size: 26px; line-height: 1.1; }
+.kpi .k { font-size: 12px; color: var(--muted); }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-size: 13px; }
+.err { margin-top: 30px; padding: 16px; border: 1px solid var(--bad); border-radius: 12px; color: var(--bad); }
+
+/* Responsive */
+@media (max-width: 1080px) {
+  .board { grid-template-columns: 1fr 1fr; grid-template-areas: "us them" "desk desk"; }
+  .team.us { grid-area: us; }
+  .team.them { grid-area: them; }
+  .desk { grid-area: desk; }
+  .team { position: static; }
+  .stats-layout { grid-template-columns: 1fr; }
+  .detail { position: static; }
+}
+@media (max-width: 640px) {
+  body { font-size: 14.5px; }
+  .topbar { position: static; gap: 10px; padding-block: 12px 10px; }
+  .brand h1 { font-size: 22px; }
+  .brand small { display: none; }
+  .rank select { padding: 6px 8px; font-size: 13px; }
+  .tabs { order: 3; width: 100%; }
+  .tabs button { flex: 1; padding: 7px 6px; }
+  .mapbar { gap: 8px; margin-top: 12px; }
+  .ctrl { flex: 1 1 auto; padding: 8px 10px; }
+  .rec-main {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-areas: "pic name p" "pic name l" "chips chips chips" "acts acts acts";
+    row-gap: 6px;
+  }
+  .rec-main > .portrait { grid-area: pic; align-self: start; }
+  .rec .info, .rec .score { display: contents; }
+  .rec .info .nm { grid-area: name; align-self: center; }
+  .rec .info .chips { grid-area: chips; margin-top: 0; }
+  .rec .score .p { grid-area: p; text-align: right; }
+  .rec .score .l { grid-area: l; text-align: right; }
+  .rec .score .acts { grid-area: acts; }
+  .rec .acts .btn { flex: 1; padding: 7px 10px; }
+  .rec .acts .btn.primary { flex: 2; }
+  .board { gap: 8px; }
+  .team { padding: 8px; border-radius: 14px; }
+  .team h2 { font-size: 16px; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
+  .team .sect { margin: 6px 0 4px; }
+  .bans { gap: 4px; }
+  .slot.ban { min-height: 0; }
+  .picks { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .slot.pick { flex-direction: column; gap: 2px; padding: 4px 2px; min-height: 0; text-align: center; }
+  .slot.pick .portrait, .slot.pick .ord { width: 100%; height: auto; aspect-ratio: 1; }
+  .slot.pick .nm { font-size: 11px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slot.pick .nm small, .slot .plus { display: none; }
+  .rec .rk { display: none; }
+  .rec .portrait { width: 44px; height: 44px; }
+  .rec .score .p { font-size: 19px; }
+  .search { width: 100%; order: 3; }
+  .pool { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+  .bc img { width: 44px; height: 44px; }
+  .mapcard .change { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand"><h1>Brawl Draft <span>Lab</span></h1><small id="dataBadge">Loading Ranked data…</small></div>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button role="tab" id="tab-draft" aria-selected="true" data-tab="draft">Draft</button>
+      <button role="tab" id="tab-stats" aria-selected="false" data-tab="stats">Map stats</button>
+      <button role="tab" id="tab-about" aria-selected="false" data-tab="about">How it works</button>
+    </nav>
+    <label class="rank" for="rankSel">Rank <select id="rankSel"></select></label>
+  </header>
+
+  <main id="app">
+    <section id="view-draft">
+      <div class="mapbar">
+        <button class="mapcard" id="mapBtn" type="button" aria-haspopup="dialog">
+          <img class="mapthumb" id="mapThumb" alt="">
+          <div style="min-width:0">
+            <div class="label" id="mapMode">Map</div>
+            <div class="name" id="mapName">Choose a map</div>
+            <div class="sub num" id="mapSub"></div>
+          </div>
+          <span class="change">Change map</span>
+        </button>
+        <div class="ctrl">
+          <span class="label">First pick</span>
+          <div class="seg" role="group" aria-label="Who picks first">
+            <button type="button" class="us" id="fpUs" aria-pressed="true">Your team</button>
+            <button type="button" class="them" id="fpThem" aria-pressed="false">Enemy</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <span class="label">Draft</span>
+          <div class="btnrow">
+            <button type="button" class="btn" id="undoBtn">Undo</button>
+            <button type="button" class="btn" id="resetBtn">Reset</button>
+            <button type="button" class="btn" id="skipBansBtn">Skip bans</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="odds" aria-live="polite">
+        <div class="odds-head"><span class="t" id="oddsTitle">Projected win chance</span><span class="why num" id="oddsWhy"></span></div>
+        <div class="odds-bar num"><div class="b" id="oddsB" style="width:50%">50%</div><div class="r" id="oddsR" style="width:50%">50%</div></div>
+      </div>
+
+      <div class="board">
+        <aside class="team us" aria-label="Your team">
+          <h2>Your team <span class="fp" id="fpTagUs">First pick</span></h2>
+          <div class="sect">Bans</div>
+          <div class="bans" id="bansUs"></div>
+          <div class="sect">Picks</div>
+          <div class="picks" id="picksUs"></div>
+        </aside>
+
+        <div class="desk">
+          <div class="prompt">
+            <div><h3 id="promptTitle">Loading…</h3><p id="promptSub"></p></div>
+          </div>
+          <div class="panel">
+            <div class="recs" id="recs"><div class="empty">Loading Ranked data…</div></div>
+          </div>
+          <div class="panel">
+            <div class="pool-head">
+              <h4 id="poolTitle">All brawlers</h4>
+              <input class="search" id="poolSearch" type="search" placeholder="Search brawlers" aria-label="Search brawlers" autocomplete="off">
+              <select class="btn" id="poolSort" aria-label="Sort brawlers">
+                <option value="map">Best on this map</option>
+                <option value="name">A to Z</option>
+              </select>
+            </div>
+            <div class="pool" id="pool"></div>
+          </div>
+        </div>
+
+        <aside class="team them" aria-label="Enemy team">
+          <h2>Enemy team <span class="fp" id="fpTagThem" hidden>First pick</span></h2>
+          <div class="sect">Bans</div>
+          <div class="bans" id="bansThem"></div>
+          <div class="sect">Picks</div>
+          <div class="picks" id="picksThem"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="view-stats" hidden>
+      <div class="mapbar">
+        <button class="mapcard" id="mapBtn2" type="button" aria-haspopup="dialog">
+          <img class="mapthumb" id="mapThumb2" alt="">
+          <div style="min-width:0">
+            <div class="label" id="mapMode2">Map</div>
+            <div class="name" id="mapName2">Choose a map</div>
+            <div class="sub num" id="mapSub2"></div>
+          </div>
+          <span class="change">Change map</span>
+        </button>
+        <div class="ctrl" style="flex:1 1 220px">
+          <span class="label">Find a brawler</span>
+          <input class="search" id="statsSearch" type="search" placeholder="Search" aria-label="Search brawlers in map stats" style="width:100%" autocomplete="off">
+        </div>
+      </div>
+      <div class="stats-layout">
+        <div class="panel tablewrap">
+          <table>
+            <thead><tr id="statsHead"></tr></thead>
+            <tbody id="statsBody"></tbody>
+          </table>
+        </div>
+        <aside class="panel detail" id="statsDetail"><div class="empty">Select a brawler to see who they beat, who beats them and their best teammates in this mode.</div></aside>
+      </div>
+    </section>
+
+    <section id="view-about" hidden>
+      <div class="about" id="aboutBody"></div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="mapOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="mapSheetTitle">
+  <div class="sheet">
+    <div class="sheet-head"><h2 id="mapSheetTitle">Ranked maps</h2><button type="button" class="btn" id="mapClose">Close</button></div>
+    <div id="mapGroups"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- helpers ----------
+  const $ = (s, el = document) => el.querySelector(s);
+  const h = (tag, attrs = {}, ...kids) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k === "text") el.textContent = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    return el;
+  };
+  const sig = (x) => 1 / (1 + Math.exp(-x));
+  const pp = (x) => (sig(x) - 0.5) * 100;
+  const sgn = (v) => (v >= 0 ? "+" : "−");
+  const fmtPP = (v, d = 1) => sgn(v) + Math.abs(v).toFixed(d);
+  const fmtPct = (p, d = 1) => (p * 100).toFixed(d) + "%";
+  const fmtInt = (n) => Number(n).toLocaleString("en-US");
+  const fmtK = (n) => (n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n));
+  const cls = (v, eps = 0.05) => (v > eps ? "pos" : v < -eps ? "neg" : "");
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("bdl:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("bdl:" + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+  };
+  const fmtDay = (s) => {
+    if (!s) return "";
+    const d = new Date(Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8)));
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  };
+
+  // ---------- state ----------
+  const SIDES = ["us", "them"];
+  const state = {
+    meta: null,
+    stats: {},
+    bucket: store.get("bucket", "all"),
+    map: store.get("map", null),
+    usFirst: store.get("usFirst", true),
+    skipBans: false,
+    bans: { us: [-1, -1, -1], them: [-1, -1, -1] },
+    picks: { us: [-1, -1, -1], them: [-1, -1, -1] },
+    active: null,
+    history: [],
+    tab: "draft",
+    poolSort: store.get("poolSort", "map"),
+    poolSearch: "",
+    expanded: new Set(),
+    showAll: false,
+    statsSort: { key: "adj", dir: -1 },
+    statsSearch: "",
+    statsSel: null,
+  };
+  let D = null; // derived numbers for the current rank bucket + map
+  const deriveCache = new Map();
+
+  // ---------- data ----------
+  async function getJSON(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(url + " returned " + r.status);
+    return r.json();
+  }
+  async function loadBucket(key) {
+    if (!state.stats[key]) state.stats[key] = await getJSON("data/stats-" + key + ".json");
+  }
+  function mapInfo(name = state.map) { return state.meta.maps.find((m) => m.name === name); }
+
+  function derive() {
+    const S = state.stats[state.bucket];
+    const meta = state.meta;
+    const n = meta.brawlers.length;
+    const mi = mapInfo();
+    const mode = mi.mode;
+    const key = state.bucket + "|" + mode;
+    let base = deriveCache.get(key);
+    if (!base) {
+      const V = new Float32Array(n * n), Vn = new Int32Array(n * n), Vw = new Int32Array(n * n), Vsrc = new Uint8Array(n * n);
+      const fillVs = (obj, src) => {
+        if (!obj) return;
+        for (const k in obj) {
+          const comma = k.indexOf(",");
+          const a = +k.slice(0, comma), b = +k.slice(comma + 1);
+          const [cnt, w, val] = obj[k];
+          V[a * n + b] = S.coef.vs * val; V[b * n + a] = -S.coef.vs * val;
+          Vn[a * n + b] = Vn[b * n + a] = cnt;
+          Vw[a * n + b] = w; Vw[b * n + a] = cnt - w;
+          Vsrc[a * n + b] = Vsrc[b * n + a] = src;
+        }
+      };
+      fillVs(S.vs._all, 2);
+      fillVs(S.vs[mode], 1);
+      const Sy = new Float32Array(n * n), Sn = new Int32Array(n * n), Sw = new Int32Array(n * n);
+      for (const k in S.syn) {
+        const comma = k.indexOf(",");
+        const a = +k.slice(0, comma), b = +k.slice(comma + 1);
+        const [cnt, w, val] = S.syn[k];
+        Sy[a * n + b] = Sy[b * n + a] = S.coef.syn * val;
+        Sn[a * n + b] = Sn[b * n + a] = cnt;
+        Sw[a * n + b] = Sw[b * n + a] = w;
+      }
+      base = { V, Vn, Vw, Vsrc, Sy, Sn, Sw };
+      deriveCache.set(key, base);
+    }
+    const mp = S.maps[state.map];
+    const modeRow = S.modes[mode] ? S.modes[mode].b : {};
+    const L = new Float64Array(n), M = new Float64Array(n), present = new Uint8Array(n);
+    const row = [];
+    for (let i = 0; i < n; i++) {
+      const g = S.global[i];
+      if (!g) { row.push(null); continue; }
+      present[i] = 1;
+      // [picks, wins, bans, adjusted win-rate logit, draft-model score]
+      const r = mp && mp.b[i];
+      const src = r || modeRow[i] || g;
+      L[i] = src[3];
+      M[i] = S.coef.map * (src.length > 4 ? src[4] : src[3]);
+      row.push(r || [0, 0, 0, L[i], M[i]]);
+    }
+    return { n, mode, modeName: state.meta.modes[mode] || mode, L, M, present, row, games: mp ? mp.games : 0, coef: S.coef, ...base };
+  }
+
+  // ---------- draft order ----------
+  const order = () => (state.usFirst ? ["us", "them", "them", "us", "us", "them"] : ["them", "us", "us", "them", "them", "us"]);
+  function pickSteps() {
+    const cnt = { us: 0, them: 0 };
+    return order().map((side, i) => ({ side, slot: cnt[side]++, num: i + 1 }));
+  }
+  function stepNum(side, slot) { return pickSteps().find((s) => s.side === side && s.slot === slot).num; }
+  function anyPick() { return SIDES.some((s) => state.picks[s].some((x) => x >= 0)); }
+  function defaultActive() {
+    if (!state.skipBans && !anyPick()) {
+      for (const side of SIDES) for (let k = 0; k < 3; k++) if (state.bans[side][k] < 0) return { side, kind: "ban", slot: k };
+    }
+    for (const s of pickSteps()) if (state.picks[s.side][s.slot] < 0) return { side: s.side, kind: "pick", slot: s.slot };
+    return null;
+  }
+  function usedSet() {
+    const u = new Set();
+    for (const side of SIDES) { for (const x of state.bans[side]) if (x >= 0) u.add(x); for (const x of state.picks[side]) if (x >= 0) u.add(x); }
+    return u;
+  }
+
+  // ---------- model ----------
+  function buildCtx() {
+    const { n, M, V, Sy, present } = D;
+    const used = new Uint8Array(n);
+    for (const x of usedSet()) used[x] = 1;
+    for (let i = 0; i < n; i++) if (!present[i]) used[i] = 1;
+    const us = state.picks.us.filter((x) => x >= 0), them = state.picks.them.filter((x) => x >= 0);
+    const parts = teamParts(us, them);
+    const rem = pickSteps().filter((s) => state.picks[s.side][s.slot] < 0).map((s) => (s.side === "us" ? 1 : -1));
+    return { n, M, V, Sy, used, us, them, z: parts.z, parts, rem };
+  }
+  function teamParts(us, them) {
+    const { n, M, V, Sy } = D;
+    let map = 0, vs = 0, syn = 0;
+    for (const a of us) map += M[a];
+    for (const b of them) map -= M[b];
+    for (const a of us) for (const b of them) vs += V[a * n + b];
+    for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) syn += Sy[us[i] * n + us[j]];
+    for (let i = 0; i < them.length; i++) for (let j = i + 1; j < them.length; j++) syn -= Sy[them[i] * n + them[j]];
+    return { map, vs, syn, z: map + vs + syn };
+  }
+  // change in score (your team's point of view) when side s (+1 you, -1 enemy) adds brawler c
+  function gain(ctx, c, s) {
+    const { n, M, V, Sy } = ctx;
+    const opp = s > 0 ? ctx.them : ctx.us, ally = s > 0 ? ctx.us : ctx.them;
+    const row = c * n;
+    let g = M[c];
+    for (let k = 0; k < opp.length; k++) g += V[row + opp[k]];
+    for (let k = 0; k < ally.length; k++) g += Sy[row + ally[k]];
+    return s > 0 ? g : -g;
+  }
+  function topK(ctx, s, K) {
+    const cs = [], vs = [];
+    for (let c = 0; c < ctx.n; c++) {
+      if (ctx.used[c]) continue;
+      const mv = s * gain(ctx, c, s);
+      if (cs.length < K) { cs.push(c); vs.push(mv); }
+      else if (mv > vs[K - 1]) { cs[K - 1] = c; vs[K - 1] = mv; }
+      else continue;
+      for (let j = cs.length - 1; j > 0 && vs[j] > vs[j - 1]; j--) {
+        [vs[j], vs[j - 1]] = [vs[j - 1], vs[j]];
+        [cs[j], cs[j - 1]] = [cs[j - 1], cs[j]];
+      }
+    }
+    return cs;
+  }
+  // Minimax with alpha-beta over the remaining picks; both teams consider their K best options.
+  function search(ctx, i, z, alpha, beta, depth, KS) {
+    if (i >= ctx.rem.length) return z;
+    const s = ctx.rem[i];
+    const cs = topK(ctx, s, KS[Math.min(depth, KS.length - 1)]);
+    if (!cs.length) return z;
+    const team = s > 0 ? ctx.us : ctx.them;
+    let best = s > 0 ? -Infinity : Infinity;
+    for (const c of cs) {
+      const dz = gain(ctx, c, s);
+      team.push(c); ctx.used[c] = 1;
+      const v = search(ctx, i + 1, z + dz, alpha, beta, depth + 1, KS);
+      team.pop(); ctx.used[c] = 0;
+      if (s > 0) { if (v > best) best = v; if (best > alpha) alpha = best; }
+      else { if (v < best) best = v; if (best < beta) beta = best; }
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+  // Best reply for the side to move at rem[0], returns {c, v}
+  function bestReply(ctx, z, KS) {
+    if (!ctx.rem.length) return null;
+    const s = ctx.rem[0];
+    const cs = topK(ctx, s, KS[0]);
+    const team = s > 0 ? ctx.us : ctx.them;
+    let best = null;
+    const sub = { ...ctx, rem: ctx.rem.slice(1) };
+    for (const c of cs) {
+      const dz = gain(ctx, c, s);
+      team.push(c); ctx.used[c] = 1;
+      const v = search(sub, 0, z + dz, -Infinity, Infinity, 1, KS);
+      team.pop(); ctx.used[c] = 0;
+      if (!best || (s > 0 ? v > best.v : v < best.v)) best = { c, v, dz };
+    }
+    return best;
+  }
+
+  function projection() {
+    const ctx = buildCtx();
+    const v = search(ctx, 0, ctx.z, -Infinity, Infinity, 0, [7, 5, 4, 4, 3, 3]);
+    return { p: sig(v), parts: ctx.parts, done: ctx.rem.length === 0, picks: ctx.us.length + ctx.them.length };
+  }
+
+  function analyzePick(sideKey) {
+    const ctx = buildCtx();
+    const s0 = sideKey === "us" ? 1 : -1;
+    const ri = ctx.rem.indexOf(s0);
+    if (ri >= 0) ctx.rem.splice(ri, 1);
+    const oppLeft = ctx.rem.includes(-s0);
+    const cands = topK(ctx, s0, 28);
+    const KS = [7, 5, 4, 4, 3];
+    const team = s0 > 0 ? ctx.us : ctx.them;
+    const out = [];
+    for (const c of cands) {
+      const dz = gain(ctx, c, s0);
+      team.push(c); ctx.used[c] = 1;
+      const v = search(ctx, 0, ctx.z + dz, -Infinity, Infinity, 0, KS);
+      // most dangerous counter-pick still available to the other team
+      let threat = null;
+      if (oppLeft) {
+        for (let r = 0; r < D.n; r++) {
+          if (ctx.used[r]) continue;
+          const val = D.V[r * D.n + c];
+          if (!threat || val > threat.val) threat = { r, val };
+        }
+      }
+      // what the other team does next in the projected line (if they move next)
+      let reply = null;
+      if (ctx.rem.length && ctx.rem[0] === -s0) {
+        const br = bestReply(ctx, ctx.z + dz, KS);
+        if (br) reply = br.c;
+      }
+      team.pop(); ctx.used[c] = 0;
+      out.push({ c, dz, v, p: s0 > 0 ? sig(v) : 1 - sig(v), now: s0 > 0 ? sig(ctx.z + dz) : 1 - sig(ctx.z + dz), threat, reply });
+    }
+    out.sort((a, b) => b.p - a.p);
+    return { side: sideKey, list: out, oppLeft, ctx };
+  }
+
+  function analyzeBan(sideKey) {
+    const ctx = buildCtx();
+    const KS = [5, 4, 3, 3, 3, 3];
+    const base = search(ctx, 0, ctx.z, -Infinity, Infinity, 0, KS);
+    const { n, M, row, games } = D;
+    const avail = [];
+    for (let i = 0; i < n; i++) if (!ctx.used[i]) avail.push(i);
+    const byStrength = [...avail].sort((a, b) => M[b] - M[a]).slice(0, 16);
+    const presence = (i) => (games ? (row[i][0] + row[i][2]) / games : 0);
+    const byPresence = [...avail].sort((a, b) => presence(b) - presence(a)).slice(0, 12);
+    const cands = [...new Set([...byStrength, ...byPresence])];
+    const out = [];
+    for (const b of cands) {
+      ctx.used[b] = 1;
+      const v = search(ctx, 0, ctx.z, -Infinity, Infinity, 0, KS);
+      ctx.used[b] = 0;
+      const delta = (sig(v) - sig(base)) * (sideKey === "us" ? 1 : -1);
+      out.push({ c: b, delta, presence: presence(b) });
+    }
+    out.sort((a, b) => b.delta - a.delta);
+    return { side: sideKey, list: out, base: sig(base) };
+  }
+
+  // ---------- rendering ----------
+  const B = (i) => state.meta.brawlers[i];
+  const portrait = (i, cls = "portrait") => h("img", { class: cls, src: B(i).img, alt: "", loading: "lazy", decoding: "async" });
+  // win rate on this map, adjusted for sample size (tiny samples lean on the mode and overall rate)
+  const mapWr = (i) => (D.present[i] ? sig(D.L[i]) : null);
+  const sideName = (s) => (s === "us" ? "Your team" : "Enemy");
+
+  function renderHeader() {
+    const m = state.meta;
+    $("#dataBadge").textContent = fmtInt(m.games) + " Ranked games · " + fmtDay(m.from) + "–" + fmtDay(m.to);
+    const sel = $("#rankSel");
+    sel.replaceChildren(...m.buckets.map((b) => h("option", { value: b.key, selected: b.key === state.bucket },
+      b.label + " (" + fmtK(b.games) + (b.games < 15000 ? ", small sample" : "") + ")")));
+  }
+
+  function renderMapCards() {
+    const mi = mapInfo();
+    for (const sfx of ["", "2"]) {
+      const img = $("#mapThumb" + sfx);
+      if (mi.img) { img.src = mi.img; img.hidden = false; } else img.hidden = true;
+      $("#mapMode" + sfx).textContent = mi.modeName;
+      $("#mapName" + sfx).textContent = mi.name;
+      $("#mapSub" + sfx).textContent = fmtInt(D.games) + " games at this rank";
+    }
+  }
+
+  function renderSlots() {
+    for (const side of SIDES) {
+      const cap = side === "us" ? "Us" : "Them";
+      const bans = $("#bans" + cap);
+      bans.replaceChildren(...[0, 1, 2].map((k) => slotEl(side, "ban", k)));
+      const picks = $("#picks" + cap);
+      picks.replaceChildren(...[0, 1, 2].map((k) => slotEl(side, "pick", k)));
+    }
+    $("#fpTagUs").hidden = !state.usFirst;
+    $("#fpTagThem").hidden = state.usFirst;
+    $("#fpUs").setAttribute("aria-pressed", String(state.usFirst));
+    $("#fpThem").setAttribute("aria-pressed", String(!state.usFirst));
+    $("#undoBtn").disabled = !state.history.length;
+    const bansEmpty = SIDES.every((s) => state.bans[s].every((x) => x < 0));
+    $("#skipBansBtn").hidden = state.skipBans || anyPick() || !state.active || state.active.kind !== "ban";
+    $("#skipBansBtn").textContent = bansEmpty ? "Skip bans" : "Done with bans";
+  }
+
+  function slotEl(side, kind, k) {
+    const arr = kind === "ban" ? state.bans[side] : state.picks[side];
+    const v = arr[k];
+    const a = state.active;
+    const isActive = a && a.side === side && a.kind === kind && a.slot === k;
+    const label = kind === "ban" ? `${sideName(side)} ban ${k + 1}` : `${sideName(side)} pick ${stepNum(side, k)}`;
+    const el = h("button", {
+      type: "button",
+      class: `slot ${kind}${v >= 0 ? " filled" : ""}${isActive ? " active" : ""}`,
+      "aria-label": v >= 0 ? `${label}: ${B(v).name}` : `${label}: empty`,
+      "aria-pressed": isActive ? "true" : "false",
+      onclick: () => { state.active = { side, kind, slot: k }; refresh(); },
+    });
+    if (v >= 0) {
+      el.append(portrait(v));
+      if (kind === "pick") {
+        const wr = mapWr(v);
+        el.append(h("div", { class: "nm" }, B(v).name, h("small", { class: "num" }, wr == null ? "No map data" : fmtPct(wr) + " on map")));
+      }
+      el.append(h("span", {
+        class: "x", role: "button", tabindex: "0", "aria-label": "Clear " + label, text: "×",
+        onclick: (e) => { e.stopPropagation(); clearSlot(side, kind, k); },
+        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); clearSlot(side, kind, k); } },
+      }));
+    } else if (kind === "pick") {
+      el.append(h("span", { class: "ord" }, String(stepNum(side, k))), h("span", { class: "plus" }, isActive ? "Choose below" : "Empty"));
+    } else {
+      el.append(h("span", { class: "plus" }, isActive ? "Choose" : "—"));
+    }
+    return el;
+  }
+
+  function clearSlot(side, kind, k) {
+    const arr = kind === "ban" ? state.bans[side] : state.picks[side];
+    if (arr[k] < 0) return;
+    state.history.push({ side, kind, slot: k, prev: arr[k] });
+    arr[k] = -1;
+    state.active = { side, kind, slot: k };
+    refresh();
+  }
+
+  function choose(i) {
+    const a = state.active;
+    if (!a) return;
+    if (usedSet().has(i)) return;
+    const arr = a.kind === "ban" ? state.bans[a.side] : state.picks[a.side];
+    state.history.push({ side: a.side, kind: a.kind, slot: a.slot, prev: arr[a.slot] });
+    arr[a.slot] = i;
+    state.active = defaultActive();
+    state.expanded.clear();
+    state.showAll = false;
+    refresh();
+  }
+
+  function renderPrompt() {
+    const a = state.active;
+    const t = $("#promptTitle"), s = $("#promptSub");
+    t.replaceChildren();
+    if (!a) {
+      t.append("Draft complete");
+      s.textContent = "Change any slot to compare alternatives, or reset to start a new draft.";
+      $("#poolTitle").textContent = "All brawlers";
+      return;
+    }
+    const span = h("span", { class: a.side }, a.side === "us" ? "Your" : "Enemy");
+    if (a.kind === "ban") {
+      t.append(span, ` ban ${a.slot + 1}`);
+      s.textContent = a.side === "us"
+        ? "Bans that raise your projected win chance the most, given who picks first."
+        : "Bans the enemy benefits from most. Enter their real bans once they show.";
+      $("#poolTitle").textContent = "Tap a brawler to ban it";
+    } else {
+      t.append(span, ` pick · #${stepNum(a.side, a.slot)} of 6`);
+      s.textContent = a.side === "us"
+        ? "Ranked by your win chance if both teams draft well from here."
+        : "What the enemy should pick. Enter what they actually lock in.";
+      $("#poolTitle").textContent = a.side === "us" ? "Tap a brawler to pick it" : "Tap the brawler the enemy picked";
+    }
+  }
+
+  function renderOdds() {
+    const pr = projection();
+    const pb = Math.round(pr.p * 1000) / 10, prr = Math.round((100 - pb) * 10) / 10;
+    const bEl = $("#oddsB"), rEl = $("#oddsR");
+    bEl.style.width = pb + "%"; rEl.style.width = prr + "%";
+    bEl.textContent = pb.toFixed(1) + "%"; rEl.textContent = prr.toFixed(1) + "%";
+    $("#oddsTitle").textContent = pr.done ? "Draft win chance" : pr.picks ? "Projected win chance (if both teams draft well)" : "Projected win chance before picks";
+    const why = $("#oddsWhy");
+    if (pr.picks) {
+      why.replaceChildren(
+        "Map ", h("b", { class: cls(pp(pr.parts.map)) }, fmtPP(pp(pr.parts.map))),
+        " · Matchups ", h("b", { class: cls(pp(pr.parts.vs)) }, fmtPP(pp(pr.parts.vs))),
+        " · Synergy ", h("b", { class: cls(pp(pr.parts.syn)) }, fmtPP(pp(pr.parts.syn))),
+      );
+    } else {
+      why.textContent = state.usFirst ? "First pick gets the best brawler on the map" : "Second pick answers with two brawlers";
+    }
+  }
+
+  let analysisTimer = 0;
+  function renderRecs() {
+    const box = $("#recs");
+    const a = state.active;
+    clearTimeout(analysisTimer);
+    if (!a) { box.replaceChildren(h("div", { class: "empty" }, "All six picks are in. The bar above shows the draft's win chance for your team.")); return; }
+    box.replaceChildren(h("div", { class: "thinking" }, "Running the draft forward…"));
+    analysisTimer = setTimeout(() => {
+      if (a.kind === "ban") renderBanRecs(box, analyzeBan(a.side));
+      else renderPickRecs(box, analyzePick(a.side));
+    }, 10);
+  }
+
+  function renderBanRecs(box, res) {
+    const list = res.list.slice(0, state.showAll ? 14 : 7);
+    if (!list.length) { box.replaceChildren(h("div", { class: "empty" }, "No ban candidates left.")); return; }
+    const items = list.map((r, idx) => {
+      const row = D.row[r.c];
+      const wr = mapWr(r.c);
+      const pickRate = D.games ? row[0] / D.games : 0, banRate = D.games ? row[2] / D.games : 0;
+      const el = h("div", { class: "rec" + (idx === 0 ? " lead" : "") },
+        h("div", { class: "rec-main" },
+          h("div", { class: "rk" }, String(idx + 1)),
+          portrait(r.c),
+          h("div", { class: "info" },
+            h("div", { class: "nm" }, B(r.c).name, idx === 0 ? h("span", { class: "badge star" }, "Best ban") : null,
+              r.delta < 0 ? h("span", { class: "badge" }, "Better to pick") : null),
+            h("div", { class: "chips num" },
+              h("span", { class: "chip" }, "Win ", h("b", {}, wr == null ? "–" : fmtPct(wr))),
+              h("span", { class: "chip" }, "Picked ", h("b", {}, fmtPct(pickRate, 0))),
+              h("span", { class: "chip" }, "Banned ", h("b", {}, fmtPct(banRate, 0))),
+            ),
+          ),
+          h("div", { class: "score" },
+            h("div", { class: "p num " + cls(r.delta * 100) }, fmtPP(r.delta * 100)),
+            h("div", { class: "l" }, res.side === "us" ? "your win chance" : "enemy win chance"),
+            h("div", { class: "acts" }, h("button", { type: "button", class: "btn primary", onclick: () => choose(r.c) }, res.side === "us" ? "Ban" : "They banned")),
+          ),
+        ),
+      );
+      return el;
+    });
+    const nodes = [...items];
+    if (res.list.length > 7) nodes.push(h("button", { type: "button", class: "btn showmore", onclick: () => { state.showAll = !state.showAll; renderRecs(); } }, state.showAll ? "Show fewer" : "Show more bans"));
+    box.replaceChildren(...nodes);
+  }
+
+  function renderPickRecs(box, res) {
+    const { list, side, oppLeft } = res;
+    if (!list.length) { box.replaceChildren(h("div", { class: "empty" }, "No brawlers left to pick.")); return; }
+    const show = list.slice(0, state.showAll ? 16 : 8);
+    const best = list[0].p;
+    // Counter exposure, relative to the other options on the list: the safest gets
+    // "Hard to counter", the most exposed quarter (and at least 3.5 points) "Counterable".
+    const tps = show.filter((r) => r.threat).map((r) => pp(r.threat.val)).sort((a, b) => a - b);
+    const minTP = tps.length ? tps[0] : null;
+    const hiTP = tps.length ? Math.max(3.5, tps[Math.floor(tps.length * 0.75)], minTP + 1) : Infinity;
+    const opp = side === "us" ? state.picks.them.filter((x) => x >= 0) : state.picks.us.filter((x) => x >= 0);
+    const ally = side === "us" ? state.picks.us.filter((x) => x >= 0) : state.picks.them.filter((x) => x >= 0);
+    const nodes = show.map((r, idx) => {
+      const c = r.c, n = D.n;
+      const mapPP = pp(D.M[c]);
+      let vsSum = 0; for (const e of opp) vsSum += D.V[c * n + e];
+      let synSum = 0; for (const a of ally) synSum += D.Sy[c * n + a];
+      const badges = [];
+      if (idx === 0) badges.push(h("span", { class: "badge star" }, "Top pick"));
+      if (r.threat && oppLeft && tps.length > 1) {
+        const tp = pp(r.threat.val);
+        if (tp === minTP && tp < hiTP) badges.push(h("span", { class: "badge good" }, "Hard to counter"));
+        else if (tp >= hiTP) badges.push(h("span", { class: "badge bad", title: B(r.threat.r).name + " counters this pick" }, "Counterable"));
+      }
+      const open = state.expanded.has(c);
+      const rec = h("div", { class: "rec" + (idx === 0 ? " lead" : "") });
+      const main = h("div", { class: "rec-main" },
+        h("div", { class: "rk" }, String(idx + 1)),
+        portrait(c),
+        h("div", { class: "info" },
+          h("div", { class: "nm" }, B(c).name, ...badges),
+          h("div", { class: "chips num" },
+            h("span", { class: "chip" }, "Map ", h("b", { class: cls(mapPP) }, fmtPP(mapPP))),
+            opp.length ? h("span", { class: "chip" }, "Counters ", h("b", { class: cls(pp(vsSum)) }, fmtPP(pp(vsSum)))) : null,
+            ally.length ? h("span", { class: "chip" }, "Synergy ", h("b", { class: cls(pp(synSum)) }, fmtPP(pp(synSum)))) : null,
+          ),
+        ),
+        h("div", { class: "score" },
+          h("div", { class: "p num" }, fmtPct(r.p)),
+          h("div", { class: "l" }, idx === 0 ? (side === "us" ? "your win chance" : "enemy win chance") : fmtPP((r.p - best) * 100) + " vs top"),
+          h("div", { class: "acts" },
+            h("button", { type: "button", class: "btn", "aria-expanded": String(open), onclick: () => { open ? state.expanded.delete(c) : state.expanded.add(c); renderPickRecsCached(); } }, open ? "Less" : "Why"),
+            h("button", { type: "button", class: "btn primary", onclick: () => choose(c) }, side === "us" ? "Pick" : "They picked"),
+          ),
+        ),
+      );
+      rec.append(main);
+      if (open) rec.append(detailFor(r, side, opp, ally));
+      return rec;
+    });
+    if (list.length > 8) nodes.push(h("button", { type: "button", class: "btn showmore", onclick: () => { state.showAll = !state.showAll; renderPickRecsCached(); } }, state.showAll ? "Show fewer" : "Show more picks"));
+    lastPickRes = res;
+    box.replaceChildren(...nodes);
+  }
+  let lastPickRes = null;
+  function renderPickRecsCached() { if (lastPickRes) renderPickRecs($("#recs"), lastPickRes); }
+
+  function vsLine(c, e) {
+    const n = D.n, k = c * n + e;
+    const cnt = D.Vn[k], w = D.Vw[k];
+    const v = pp(D.V[k]);
+    return h("li", {},
+      h("span", {}, "vs " + B(e).name, " ", h("span", { class: "n num" }, cnt ? `${fmtPct(w / cnt, 0)} in ${fmtInt(cnt)} ${D.Vsrc[k] === 1 ? D.modeName : "all-mode"} games` : "no games")),
+      h("b", { class: "num " + cls(v) }, fmtPP(v)));
+  }
+  function synLine(c, a) {
+    const n = D.n, k = c * n + a;
+    const cnt = D.Sn[k], w = D.Sw[k];
+    const v = pp(D.Sy[k]);
+    return h("li", {},
+      h("span", {}, "with " + B(a).name, " ", h("span", { class: "n num" }, cnt ? `${fmtPct(w / cnt, 0)} in ${fmtInt(cnt)} games` : "no games")),
+      h("b", { class: "num " + cls(v) }, fmtPP(v)));
+  }
+
+  function detailFor(r, side, opp, ally) {
+    const c = r.c;
+    const row = D.row[c];
+    const wrap = h("div", { class: "rec-more" });
+    const mapUl = h("ul", {},
+      h("li", {}, h("span", {}, "Raw win rate here"), h("b", { class: "num" }, row[0] ? fmtPct(row[1] / row[0]) : "–")),
+      h("li", {}, h("span", {}, "Adjusted for sample size"), h("b", { class: "num" }, fmtPct(sig(D.L[c])))),
+      h("li", {}, h("span", {}, "Games here"), h("b", { class: "num" }, fmtInt(row[0]))),
+      h("li", {}, h("span", {}, "Pick rate / ban rate"), h("b", { class: "num" }, D.games ? fmtPct(row[0] / D.games, 0) + " / " + fmtPct(row[2] / D.games, 0) : "–")),
+    );
+    wrap.append(h("div", {}, h("h4", {}, "On " + state.map), mapUl));
+    if (opp.length) wrap.append(h("div", {}, h("h4", {}, side === "us" ? "Against enemy picks" : "Against your picks"), h("ul", {}, opp.map((e) => vsLine(c, e)))));
+    if (ally.length) wrap.append(h("div", {}, h("h4", {}, side === "us" ? "With your picks" : "With enemy picks"), h("ul", {}, ally.map((a) => synLine(c, a)))));
+    const look = h("ul", {});
+    if (r.reply != null) look.append(h("li", {}, h("span", {}, "Their best answer"), h("b", {}, B(r.reply).name)));
+    if (r.threat) look.append(h("li", {}, h("span", {}, "Hardest counter left: " + B(r.threat.r).name), h("b", { class: "num " + cls(-pp(r.threat.val)) }, fmtPP(-pp(r.threat.val)))));
+    look.append(h("li", {}, h("span", {}, "Win chance right now"), h("b", { class: "num" }, fmtPct(r.now))));
+    look.append(h("li", {}, h("span", {}, "After the rest of the draft"), h("b", { class: "num" }, fmtPct(r.p))));
+    wrap.append(h("div", {}, h("h4", {}, "Looking ahead"), look));
+    return wrap;
+  }
+
+  function renderPool() {
+    const used = usedSet();
+    const q = state.poolSearch.trim().toLowerCase();
+    let idx = state.meta.brawlers.map((_, i) => i);
+    if (q) idx = idx.filter((i) => B(i).name.toLowerCase().includes(q));
+    if (state.poolSort === "map") idx.sort((a, b) => (D.present[b] - D.present[a]) || (D.M[b] - D.M[a]));
+    else idx.sort((a, b) => B(a).name.localeCompare(B(b).name));
+    const disabledAll = !state.active;
+    $("#poolSort").value = state.poolSort;
+    $("#pool").replaceChildren(...idx.map((i) => {
+      const wr = mapWr(i);
+      const isUsed = used.has(i);
+      return h("button", {
+        type: "button", class: "bc" + (D.present[i] ? "" : " nodata"),
+        disabled: isUsed || disabledAll || !D.present[i],
+        title: B(i).name,
+        onclick: () => choose(i),
+      }, portrait(i, ""), h("span", { class: "n" }, B(i).name), h("span", { class: "w num" }, !D.present[i] ? "no data" : wr == null ? "–" : fmtPct(wr, 0)));
+    }));
+  }
+
+  // ---------- map picker ----------
+  function openMaps() {
+    const groups = {};
+    for (const m of state.meta.maps) (groups[m.modeName] ||= []).push(m);
+    const S = state.stats[state.bucket];
+    $("#mapGroups").replaceChildren(...Object.entries(groups).map(([mode, maps]) =>
+      h("div", { class: "modegroup" }, h("h3", {}, mode),
+        h("div", { class: "maps" }, maps.map((m) => h("button", {
+          type: "button", class: "mapt", "aria-current": m.name === state.map ? "true" : "false",
+          onclick: () => { setMap(m.name); closeMaps(); },
+        }, m.img ? h("img", { src: m.img, alt: "", loading: "lazy" }) : null, h("span", { class: "n" }, m.name),
+          h("span", { class: "g num" }, fmtInt(S.maps[m.name] ? S.maps[m.name].games : 0) + " games")))))));
+    $("#mapOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("#mapClose").focus();
+  }
+  function closeMaps() { $("#mapOverlay").hidden = true; document.body.style.overflow = ""; }
+  function setMap(name) {
+    state.map = name; store.set("map", name);
+    state.statsSel = null;
+    D = derive();
+    refresh(true);
+  }
+
+  // ---------- stats view ----------
+  const STATS_COLS = [
+    { key: "name", label: "Brawler" },
+    { key: "adj", label: "Map score", title: "Win rate adjusted for sample size" },
+    { key: "wr", label: "Win rate" },
+    { key: "pick", label: "Pick rate" },
+    { key: "ban", label: "Ban rate" },
+    { key: "games", label: "Games" },
+  ];
+  function renderStats() {
+    const head = $("#statsHead");
+    head.replaceChildren(...STATS_COLS.map((c) => {
+      const sorted = state.statsSort.key === c.key;
+      return h("th", { scope: "col" }, h("button", {
+        type: "button", title: c.title || null, "aria-sort": sorted ? (state.statsSort.dir < 0 ? "descending" : "ascending") : null,
+        onclick: () => { state.statsSort = { key: c.key, dir: sorted ? -state.statsSort.dir : (c.key === "name" ? 1 : -1) }; renderStats(); },
+      }, c.label + (sorted ? (state.statsSort.dir < 0 ? " ↓" : " ↑") : "")));
+    }));
+    const G = D.games || 1;
+    const q = state.statsSearch.trim().toLowerCase();
+    let rows = [];
+    for (let i = 0; i < D.n; i++) {
+      if (!D.present[i]) continue;
+      if (q && !B(i).name.toLowerCase().includes(q)) continue;
+      const r = D.row[i];
+      rows.push({ i, name: B(i).name, adj: sig(D.L[i]), wr: r[0] ? r[1] / r[0] : 0, pick: r[0] / G, ban: r[2] / G, games: r[0] });
+    }
+    const { key, dir } = state.statsSort;
+    rows.sort((a, b) => (key === "name" ? a.name.localeCompare(b.name) : a[key] - b[key]) * dir);
+    const maxPick = Math.max(...rows.map((r) => r.pick), 0.0001);
+    $("#statsBody").replaceChildren(...rows.map((r) => h("tr", {
+      "aria-selected": state.statsSel === r.i ? "true" : "false", tabindex: "0",
+      onclick: () => { state.statsSel = r.i; renderStats(); },
+      onkeydown: (e) => { if (e.key === "Enter") { state.statsSel = r.i; renderStats(); } },
+    },
+      h("td", {}, h("span", { class: "who" }, portrait(r.i, ""), r.name)),
+      h("td", { class: "num" }, h("b", {}, fmtPct(r.adj))),
+      h("td", { class: "num" }, r.games ? fmtPct(r.wr) : "–"),
+      h("td", { class: "num" }, fmtPct(r.pick), h("span", { class: "bar", style: `width:${Math.round(36 * r.pick / maxPick)}px` })),
+      h("td", { class: "num" }, fmtPct(r.ban)),
+      h("td", { class: "num" }, fmtInt(r.games)),
+    )));
+    renderStatsDetail();
+  }
+  function renderStatsDetail() {
+    const box = $("#statsDetail");
+    const x = state.statsSel;
+    if (x == null) { box.replaceChildren(h("div", { class: "empty" }, "Select a brawler to see who they beat, who beats them and their best teammates in " + D.modeName + ".")); return; }
+    const n = D.n, minN = 25;
+    const vsList = [], synList = [];
+    for (let e = 0; e < n; e++) {
+      if (e === x || !D.present[e]) continue;
+      const k = x * n + e;
+      if (D.Vn[k] >= minN) vsList.push({ e, v: D.V[k], cnt: D.Vn[k], w: D.Vw[k] });
+      if (D.Sn[k] >= minN) synList.push({ e, v: D.Sy[k], cnt: D.Sn[k], w: D.Sw[k] });
+    }
+    vsList.sort((a, b) => b.v - a.v);
+    synList.sort((a, b) => b.v - a.v);
+    const li = (o, prefix) => h("li", {}, portrait(o.e, ""), h("span", {}, B(o.e).name, " ", h("span", { class: "n num" }, `${fmtPct(o.w / o.cnt, 0)} · ${fmtInt(o.cnt)}`)), h("b", { class: "num " + cls(pp(o.v)) }, fmtPP(pp(o.v))));
+    const r = D.row[x];
+    box.replaceChildren(
+      h("div", { class: "hd" }, portrait(x, ""), h("div", {}, h("h3", {}, B(x).name), h("div", { class: "num", style: "color:var(--muted);font-size:13px" }, `${r[0] ? fmtPct(r[1] / r[0]) : "–"} win · ${fmtInt(r[0])} games on ${state.map}`))),
+      h("h4", {}, "Strong against"), h("ul", {}, vsList.slice(0, 5).map((o) => li(o))),
+      h("h4", {}, "Weak against"), h("ul", {}, vsList.slice(-5).reverse().map((o) => li(o))),
+      h("h4", {}, "Best teammates"), h("ul", {}, synList.slice(0, 5).map((o) => li(o))),
+      h("p", { class: "n", style: "color:var(--muted);font-size:12px;margin:12px 0 0" }, `Matchups use ${D.modeName} games where there are enough, otherwise all modes. Shown: pairs with ${minN}+ games. The number is the edge beyond each brawler's own strength.`),
+    );
+  }
+
+  // ---------- about ----------
+  function renderAbout() {
+    const m = state.meta, S = state.stats[state.bucket];
+    const ev = S.eval, evm = S.evalMapOnly;
+    const b = m.buckets.find((x) => x.key === state.bucket);
+    $("#aboutBody").replaceChildren(
+      h("h2", {}, "How Brawl Draft Lab picks"),
+      h("div", { class: "kpis" },
+        h("div", { class: "kpi" }, h("div", { class: "v num" }, fmtInt(m.games)), h("div", { class: "k" }, "Ranked games analysed")),
+        h("div", { class: "kpi" }, h("div", { class: "v num" }, fmtDay(m.from) + "–" + fmtDay(m.to)), h("div", { class: "k" }, "Date range (UTC)")),
+        h("div", { class: "kpi" }, h("div", { class: "v num" }, ev ? fmtPct(ev.acc) : "–"), h("div", { class: "k" }, "Winner called correctly on unseen games (" + b.label + ")")),
+        h("div", { class: "kpi" }, h("div", { class: "v num" }, String(m.maps.length)), h("div", { class: "k" }, "Ranked maps")),
+      ),
+      h("div", { class: "panel" },
+        h("h3", {}, "Where the numbers come from"),
+        h("p", {}, "Every game here is a real Ranked draft pulled from the ", h("b", {}, "official Brawl Stars API"), ". We start from the trophy leaderboards of 80+ countries, then follow the players we meet in Ranked games, so most of the data comes from people who play Ranked a lot. Each game records the map, all six picks, all six bans, each player's rank and who won."),
+        h("p", {}, "The rank filter uses the average rank of the six players. ", h("b", {}, b.label), " covers " + fmtInt(b.games) + " games."),
+      ),
+      h("div", { class: "panel" },
+        h("h3", {}, "How a pick is scored"),
+        h("ul", {},
+          h("li", {}, h("b", {}, "Map score:"), " how much the brawler adds to a team's win chance on this map, built from its overall, mode and map results. Thin samples stay close to zero, so a brawler with 12 games can't top the list by luck."),
+          h("li", {}, h("b", {}, "Counters:"), " how much better the brawler does against each enemy pick than the two brawlers' own strength predicts, with a separate adjustment for the mode."),
+          h("li", {}, h("b", {}, "Synergy:"), " the same idea for teammates: how much better a pair does together than expected."),
+          h("li", {}, h("b", {}, "Looking ahead:"), " the tool plays the rest of the draft forward. Both teams pick their strongest options in Ranked order (1-2-2-1), and each recommendation is ranked by your win chance once all six brawlers are in. A pick that the enemy can hard-counter next turn drops down the list."),
+          h("li", {}, h("b", {}, "Bans:"), " each ban is tested by re-running the draft without that brawler. If you pick first, banning the best brawler on the map can hurt you, so the tool says when a brawler is better picked than banned."),
+        ),
+        h("p", {}, "All three parts are learned together from every game in one model (a regularized logistic regression). Learning them jointly stops double counting: a brawler that only looks strong because it's usually paired with a strong teammate doesn't get that teammate's credit."),
+      ),
+      h("div", { class: "panel" },
+        h("h3", {}, "How much to trust it"),
+        ev ? h("p", {}, "On " + fmtInt(ev.n) + " games the model never saw, it called the winner ", h("b", {}, fmtPct(ev.acc)), " of the time from the draft alone. Using only map win rates gets ", h("b", {}, evm ? fmtPct(evm.acc) : "–"), ", and a coin flip gets 50%.") : h("p", {}, "Not enough games at this rank to test the model."),
+        h("p", {}, "That gap is the real value of a good draft. Skill, teamwork and luck decide most games, so a 55% draft is a strong edge rather than a guaranteed win. Projected odds usually sit between 40% and 60% for that reason."),
+      ),
+      h("div", { class: "panel" },
+        h("h3", {}, "Updating the data"),
+        h("p", {}, "Stats were built " + m.generated.replace("T", " ").replace("Z", " UTC") + ". After a balance change or a new Ranked season, re-run the collector and stats builder to refresh them."),
+      ),
+    );
+  }
+
+  // ---------- views ----------
+  function setTab(tab) {
+    state.tab = tab;
+    for (const t of ["draft", "stats", "about"]) {
+      $("#view-" + t).hidden = t !== tab;
+      $("#tab-" + t).setAttribute("aria-selected", String(t === tab));
+    }
+    if (tab === "stats") renderStats();
+    if (tab === "about") renderAbout();
+  }
+
+  function refresh(full = false) {
+    if (!state.active && full) state.active = defaultActive();
+    renderMapCards();
+    renderSlots();
+    renderPrompt();
+    renderOdds();
+    renderRecs();
+    renderPool();
+    if (state.tab === "stats") renderStats();
+    if (state.tab === "about") renderAbout();
+    saveDraft();
+  }
+
+  function saveDraft() {
+    store.set("draft", { map: state.map, usFirst: state.usFirst, bans: state.bans, picks: state.picks, skipBans: state.skipBans });
+  }
+  function restoreDraft() {
+    const d = store.get("draft", null);
+    if (!d || d.map !== state.map) return;
+    const n = state.meta.brawlers.length;
+    const ok = (arr) => Array.isArray(arr) && arr.length === 3 && arr.every((x) => Number.isInteger(x) && x >= -1 && x < n);
+    if (d.bans && d.picks && SIDES.every((s) => ok(d.bans[s]) && ok(d.picks[s]))) {
+      state.bans = d.bans; state.picks = d.picks; state.skipBans = !!d.skipBans; state.usFirst = !!d.usFirst;
+    }
+  }
+
+  function resetDraft() {
+    state.bans = { us: [-1, -1, -1], them: [-1, -1, -1] };
+    state.picks = { us: [-1, -1, -1], them: [-1, -1, -1] };
+    state.history = [];
+    state.skipBans = false;
+    state.expanded.clear();
+    state.showAll = false;
+    state.active = defaultActive();
+    refresh();
+  }
+
+  // ---------- events ----------
+  function wire() {
+    for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => setTab(b.dataset.tab));
+    $("#mapBtn").addEventListener("click", openMaps);
+    $("#mapBtn2").addEventListener("click", openMaps);
+    $("#mapClose").addEventListener("click", closeMaps);
+    $("#mapOverlay").addEventListener("click", (e) => { if (e.target.id === "mapOverlay") closeMaps(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#mapOverlay").hidden) closeMaps(); });
+    $("#fpUs").addEventListener("click", () => { state.usFirst = true; store.set("usFirst", true); state.active = defaultActive(); refresh(); });
+    $("#fpThem").addEventListener("click", () => { state.usFirst = false; store.set("usFirst", false); state.active = defaultActive(); refresh(); });
+    $("#undoBtn").addEventListener("click", () => {
+      const last = state.history.pop();
+      if (!last) return;
+      const arr = last.kind === "ban" ? state.bans[last.side] : state.picks[last.side];
+      arr[last.slot] = last.prev;
+      state.active = { side: last.side, kind: last.kind, slot: last.slot };
+      if (last.prev >= 0) state.active = defaultActive();
+      refresh();
+    });
+    $("#resetBtn").addEventListener("click", resetDraft);
+    $("#skipBansBtn").addEventListener("click", () => { state.skipBans = true; state.active = defaultActive(); refresh(); });
+    $("#poolSearch").addEventListener("input", (e) => { state.poolSearch = e.target.value; renderPool(); });
+    $("#poolSearch").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      const first = $("#pool .bc:not(:disabled)");
+      if (first) { first.click(); e.target.value = ""; state.poolSearch = ""; renderPool(); }
+    });
+    $("#poolSort").addEventListener("change", (e) => { state.poolSort = e.target.value; store.set("poolSort", state.poolSort); renderPool(); });
+    $("#statsSearch").addEventListener("input", (e) => { state.statsSearch = e.target.value; renderStats(); });
+    $("#rankSel").addEventListener("change", async (e) => {
+      const key = e.target.value;
+      e.target.disabled = true;
+      try { await loadBucket(key); state.bucket = key; store.set("bucket", key); D = derive(); refresh(); }
+      catch (err) { e.target.value = state.bucket; }
+      finally { e.target.disabled = false; }
+    });
+  }
+
+  async function boot() {
+    try {
+      state.meta = await getJSON("data/meta.json");
+      if (!state.meta.buckets.find((b) => b.key === state.bucket)) state.bucket = state.meta.buckets[0].key;
+      await loadBucket(state.bucket);
+      if (!mapInfo()) {
+        const S = state.stats[state.bucket];
+        state.map = [...state.meta.maps].sort((a, b) => (S.maps[b.name]?.games || 0) - (S.maps[a.name]?.games || 0))[0].name;
+      }
+      restoreDraft();
+      D = derive();
+      renderHeader();
+      wire();
+      state.active = defaultActive();
+      refresh();
+    } catch (err) {
+      $("#app").replaceChildren(h("div", { class: "err" }, "Couldn't load the Ranked data (" + err.message + "). Reload the page to try again."));
+    }
+  }
+  boot();
+})();
+</script>
