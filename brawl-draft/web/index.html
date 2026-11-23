@@ -4,7 +4,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=Lilita+One&display=swap">
 <style>
-/* Layout: broadcast-style draft board. Your team (blue) left, enemy (red) right, the analyst desk in the middle. */
+/* Layout: broadcast-style draft board. Your team (blue) left, enemy (red) right; in the middle the
+   suggestions and the brawler grid sit together so every slot fills with one tap. */
 :root {
   --bg: #0d0f1e;
   --surface: #161a30;
@@ -63,6 +64,9 @@ button { cursor: pointer; }
 img { max-width: 100%; }
 .num { font-variant-numeric: tabular-nums; }
 .wrap { max-width: 1320px; margin: 0 auto; }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+.short { display: none; }
 
 /* Header */
 .topbar {
@@ -91,34 +95,33 @@ img { max-width: 100%; }
 }
 .mapcard:hover { border-color: var(--star); }
 .mapthumb { width: 54px; height: 54px; border-radius: 10px; background: var(--surface-2); object-fit: contain; flex: none; }
-.mapcard .label { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.mapcard .label, .ctrl .label { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .mapcard .name { font-family: var(--font-display); font-size: 21px; line-height: 1.1; }
 .mapcard .sub { font-size: 12.5px; color: var(--muted); }
 .mapcard .change { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--star-ink); white-space: nowrap; }
 .ctrl { display: flex; flex-direction: column; justify-content: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
-.ctrl .label { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .seg { display: flex; gap: 4px; background: var(--surface-2); border-radius: 10px; padding: 3px; }
 .seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 13.5px; color: var(--muted); white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); }
 .seg button[aria-pressed="true"].us { background: var(--blue); color: #fff; }
 .seg button[aria-pressed="true"].them { background: var(--red); color: #fff; }
-.btnrow { display: flex; gap: 6px; }
-.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 12px; font-weight: 700; font-size: 13.5px; }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 7px 12px; font-weight: 700; font-size: 13.5px; white-space: nowrap; }
 .btn:hover:not(:disabled) { border-color: var(--muted); }
 .btn:disabled { opacity: .45; cursor: default; }
 .btn.primary { background: var(--star); border-color: var(--star); color: #1b1400; }
 
 /* Odds */
-.odds { margin-top: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
-.odds-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.odds { margin-top: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px 12px; }
+.odds-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
 .odds-head .t { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .odds-head .why { font-size: 12.5px; color: var(--muted); }
-.odds-bar { display: flex; height: 34px; border-radius: 10px; overflow: hidden; margin-top: 8px; font-family: var(--font-display); font-size: 18px; }
+.odds-bar { display: flex; height: 32px; border-radius: 10px; overflow: hidden; margin-top: 8px; font-family: var(--font-display); font-size: 18px; }
 .odds-bar > div { display: flex; align-items: center; padding: 0 12px; color: #fff; transition: width .35s ease; min-width: 64px; }
 .odds-bar .b { background: var(--blue); }
 .odds-bar .r { background: var(--red); justify-content: flex-end; }
 
 /* Board */
-.board { display: grid; grid-template-columns: 236px minmax(0, 1fr) 236px; gap: 14px; margin-top: 14px; align-items: start; }
+.board { display: grid; grid-template-columns: 228px minmax(0, 1fr) 228px; gap: 14px; margin-top: 14px; align-items: start; }
 .team { border-radius: 16px; padding: 12px; border: 1px solid var(--line); background: var(--surface); position: sticky; top: calc(env(safe-area-inset-top, 0px) + 76px); }
 .team.us { box-shadow: inset 0 3px 0 var(--blue); }
 .team.them { box-shadow: inset 0 3px 0 var(--red); }
@@ -129,11 +132,12 @@ img { max-width: 100%; }
 .team .sect { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 10px 0 6px; }
 .bans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .picks { display: grid; gap: 8px; }
+.slotw { position: relative; min-width: 0; }
 .slot {
-  position: relative; display: flex; align-items: center; gap: 10px; width: 100%;
+  display: flex; align-items: center; gap: 10px; width: 100%;
   border: 1.5px dashed var(--line); background: var(--surface-2); border-radius: 12px; padding: 6px; text-align: left; min-height: 56px;
 }
-.slot.ban { justify-content: center; padding: 4px; min-height: 52px; aspect-ratio: 1; }
+.slot.ban { justify-content: center; padding: 4px; min-height: 0; aspect-ratio: 1; position: relative; }
 .slot.filled { border-style: solid; }
 .team.us .slot.pick.filled { border-color: color-mix(in srgb, var(--blue) 55%, var(--line)); background: var(--blue-soft); }
 .team.them .slot.pick.filled { border-color: color-mix(in srgb, var(--red) 55%, var(--line)); background: var(--red-soft); }
@@ -144,67 +148,66 @@ img { max-width: 100%; }
 .slot .ord { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-family: var(--font-display); font-size: 20px; color: var(--muted); background: var(--bg); flex: none; }
 .slot .nm { font-weight: 700; font-size: 14px; line-height: 1.15; min-width: 0; }
 .slot .nm small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; }
-.slot .x { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 13px; line-height: 1; display: none; place-items: center; padding: 0; z-index: 1; }
-.slot.filled:hover .x, .slot.filled:focus-within .x, .slot.filled.active .x { display: grid; }
 .slot .plus { color: var(--muted); font-size: 12px; font-weight: 600; }
+.slotw .x { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1; display: none; place-items: center; padding: 0; z-index: 1; }
+.slotw:hover .x, .slotw:focus-within .x, .slotw.on .x { display: grid; }
 
 /* Center desk */
-.desk { min-width: 0; display: grid; gap: 14px; }
-.prompt { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.desk { min-width: 0; display: grid; gap: 12px; }
+.prompt { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
 .prompt h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; line-height: 1.15; text-wrap: balance; }
 .prompt h3 .us { color: var(--blue); }
 .prompt h3 .them { color: var(--red); }
 .prompt p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; }
+.prompt .btnrow { display: flex; gap: 6px; flex-wrap: wrap; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
-.recs { display: grid; gap: 8px; }
-.rec { border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); overflow: hidden; }
-.rec.lead { border-color: var(--star); }
-.rec-main { display: grid; grid-template-columns: 26px 48px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; }
-.rec .rk { font-family: var(--font-display); font-size: 18px; color: var(--muted); text-align: center; }
-.rec.lead .rk { color: var(--star-ink); }
-.rec .portrait { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: var(--bg); }
-.rec .info { min-width: 0; }
-.rec .nm { font-weight: 800; font-size: 15.5px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.badge { font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; background: var(--surface); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
-.badge.star { background: var(--star-soft); color: var(--star-ink); border-color: transparent; }
-.badge.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 40%, transparent); }
-.badge.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
-.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-.chip { font-size: 12px; color: var(--muted); background: var(--surface); border-radius: 8px; padding: 2px 7px; white-space: nowrap; }
-.chip b { font-weight: 800; }
-.pos { color: var(--good); }
-.neg { color: var(--bad); }
-.rec .score { text-align: right; display: grid; gap: 4px; justify-items: end; }
-.rec .score .p { font-family: var(--font-display); font-size: 22px; line-height: 1; }
-.rec .score .l { font-size: 11px; color: var(--muted); }
-.rec .acts { display: flex; gap: 6px; }
-.rec .acts .btn { padding: 5px 10px; font-size: 12.5px; }
-.rec-more { border-top: 1px solid var(--line); padding: 10px 12px 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; font-size: 13px; }
-.rec-more h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.rec-more ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-.rec-more li { display: flex; justify-content: space-between; gap: 8px; }
-.rec-more li span:first-child { min-width: 0; }
-.rec-more .n { color: var(--muted); font-size: 12px; }
-.empty { color: var(--muted); font-size: 14px; padding: 8px 4px; }
-.showmore { margin-top: 8px; width: 100%; }
-.thinking { color: var(--muted); font-size: 13px; }
+.phead { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.phead h4 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.phead .hint { font-size: 12.5px; color: var(--muted); margin-right: auto; }
+.linkbtn { border: 0; background: none; padding: 2px 0; font-weight: 700; font-size: 13px; color: var(--star-ink); }
+.linkbtn:hover { text-decoration: underline; }
+
+/* Suggestion tiles */
+.sugg { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 8px; }
+.tile { position: relative; min-width: 0; }
+.tile-main {
+  width: 100%; display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 10px; align-items: center;
+  text-align: left; padding: 8px 30px 8px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2);
+}
+.tile-main:hover { border-color: var(--star); }
+.tile.lead .tile-main { border-color: var(--star); box-shadow: 0 0 0 3px var(--star-soft); }
+.tile-main .pic { grid-row: 1 / 4; width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: var(--bg); }
+.tile-main .nm { font-weight: 800; font-size: 14.5px; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-main .val { font-family: var(--font-display); font-size: 21px; line-height: 1.1; }
+.tile-main .sub { font-size: 11.5px; color: var(--muted); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-main .sub b { font-weight: 800; }
+.tag-top { color: var(--star-ink); }
+.tag-safe { color: var(--good); }
+.tag-risk { color: var(--bad); }
+.tile-info { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 800; font-style: italic; font-family: Georgia, serif; padding: 0; display: grid; place-items: center; }
+.tile-info:hover { color: var(--fg); border-color: var(--muted); }
+.empty { color: var(--muted); font-size: 14px; padding: 6px 2px; }
+.thinking { color: var(--muted); font-size: 13px; padding: 6px 2px; min-height: 40px; }
 
 /* Pool */
-.pool-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-.pool-head h4 { margin: 0 auto 0 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.search { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; min-width: 0; width: 180px; }
-.pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
-.bc { display: grid; justify-items: center; gap: 3px; padding: 6px 4px; border-radius: 12px; border: 1px solid transparent; background: var(--surface-2); text-align: center; }
+.poolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.search { flex: 1 1 200px; min-width: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.search:focus { border-color: var(--star); outline: none; box-shadow: 0 0 0 3px var(--star-soft); }
+.kbd { font-size: 12px; color: var(--muted); }
+.kbd kbd { font: inherit; font-weight: 700; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: var(--surface-2); }
+.pool { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 8px; }
+.bc { display: grid; justify-items: center; gap: 2px; padding: 6px 3px; border-radius: 12px; border: 1px solid transparent; background: var(--surface-2); text-align: center; min-width: 0; }
 .bc:hover:not(:disabled) { border-color: var(--star); }
-.bc img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: var(--bg); }
-.bc .n { font-size: 11.5px; font-weight: 700; line-height: 1.1; max-width: 100%; overflow-wrap: anywhere; }
-.bc .w { font-size: 11px; color: var(--muted); }
-.bc:disabled { opacity: .3; cursor: default; }
-.bc.nodata .w { font-style: italic; }
+.bc.first { border-color: var(--star); box-shadow: 0 0 0 3px var(--star-soft); }
+.bc img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: var(--bg); }
+.bc .n { font-size: 11.5px; font-weight: 700; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc .w { font-size: 10.5px; color: var(--muted); }
+.bc:disabled { opacity: .28; cursor: default; }
 
-/* Map picker */
+/* Sheets (map picker, breakdown) */
 .overlay { position: fixed; inset: 0; z-index: 20; background: rgba(5, 6, 15, .62); display: grid; place-items: start center; padding: calc(env(safe-area-inset-top, 0px) + 24px) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
 .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; width: min(1000px, 100%); padding: 16px; box-shadow: var(--shadow); }
+.sheet.narrow { width: min(560px, 100%); }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
 .sheet-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; }
 .modegroup h3 { margin: 14px 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
@@ -214,6 +217,22 @@ img { max-width: 100%; }
 .mapt img { width: 100%; aspect-ratio: 1; object-fit: contain; background: var(--bg); border-radius: 8px; }
 .mapt .n { font-weight: 800; font-size: 14px; line-height: 1.15; }
 .mapt .g { font-size: 12px; color: var(--muted); }
+.why-hd { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.why-hd img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: var(--bg); }
+.why-hd h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 1.1; }
+.why-hd .big { font-family: var(--font-display); font-size: 28px; text-align: right; line-height: 1; }
+.why-hd .big small { display: block; font-family: var(--font-body); font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.chip { font-size: 12px; color: var(--muted); background: var(--surface-2); border-radius: 8px; padding: 2px 7px; white-space: nowrap; }
+.chip b { font-weight: 800; }
+.why-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; font-size: 13.5px; }
+.why-body h4 { margin: 0 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.why-body ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.why-body li { display: flex; justify-content: space-between; gap: 8px; }
+.why-body li span:first-child { min-width: 0; }
+.why-body .n { color: var(--muted); font-size: 12px; }
+.why-body p { margin: 0; color: var(--muted); }
+.why-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
 /* Stats */
 .stats-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; margin-top: 16px; align-items: start; }
@@ -252,7 +271,6 @@ td .who img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; 
 .kpi { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .kpi .v { font-family: var(--font-display); font-size: 26px; line-height: 1.1; }
 .kpi .k { font-size: 12px; color: var(--muted); }
-code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-size: 13px; }
 .err { margin-top: 30px; padding: 16px; border: 1px solid var(--bad); border-radius: 12px; color: var(--bad); }
 
 /* Responsive */
@@ -262,51 +280,77 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
   .team.them { grid-area: them; }
   .desk { grid-area: desk; }
   .team { position: static; }
+  .picks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .slot.pick { flex-direction: column; gap: 4px; padding: 6px 4px; text-align: center; }
+  .slot.pick .nm small, .slot .plus { display: none; }
+  .slot.pick .nm { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
   .stats-layout { grid-template-columns: 1fr; }
   .detail { position: static; }
+  .kbd { display: none; }
 }
 @media (max-width: 640px) {
   body { font-size: 14.5px; }
-  .topbar { position: static; gap: 10px; padding-block: 12px 10px; }
-  .brand h1 { font-size: 22px; }
+  .long { display: none; }
+  .short { display: inline; }
+  .topbar { position: static; gap: 8px 10px; padding-block: 10px 8px; }
+  .brand h1 { font-size: 21px; }
   .brand small { display: none; }
-  .rank select { padding: 6px 8px; font-size: 13px; }
-  .tabs { order: 3; width: 100%; }
-  .tabs button { flex: 1; padding: 7px 6px; }
-  .mapbar { gap: 8px; margin-top: 12px; }
-  .ctrl { flex: 1 1 auto; padding: 8px 10px; }
-  .rec-main {
-    grid-template-columns: 44px minmax(0, 1fr) auto;
-    grid-template-areas: "pic name p" "pic name l" "chips chips chips" "acts acts acts";
-    row-gap: 6px;
-  }
-  .rec-main > .portrait { grid-area: pic; align-self: start; }
-  .rec .info, .rec .score { display: contents; }
-  .rec .info .nm { grid-area: name; align-self: center; }
-  .rec .info .chips { grid-area: chips; margin-top: 0; }
-  .rec .score .p { grid-area: p; text-align: right; }
-  .rec .score .l { grid-area: l; text-align: right; }
-  .rec .score .acts { grid-area: acts; }
-  .rec .acts .btn { flex: 1; padding: 7px 10px; }
-  .rec .acts .btn.primary { flex: 2; }
-  .board { gap: 8px; }
+  .rank select { padding: 5px 6px; font-size: 13px; max-width: 168px; }
+  .tabs { order: 3; width: 100%; padding: 3px; }
+  .tabs button { flex: 1; padding: 6px 4px; font-size: 14px; }
+  .mapbar { gap: 8px; margin-top: 10px; flex-wrap: nowrap; }
+  .mapcard { flex: 1 1 auto; padding: 6px 8px 6px 6px; gap: 8px; }
+  .mapthumb { width: 40px; height: 40px; }
+  .mapcard .name { font-size: 17px; }
+  .mapcard .label, .mapcard .change { display: none; }
+  .mapcard .sub { font-size: 11.5px; }
+  .ctrl { padding: 6px 8px; gap: 4px; flex: none; }
+  .ctrl .label { font-size: 10px; }
+  .seg button { padding: 5px 10px; font-size: 13px; }
+  .odds { margin-top: 8px; padding: 6px 10px 8px; }
+  .odds-head .t { display: none; }
+  .odds-head .why { font-size: 11.5px; }
+  .odds-bar { height: 26px; font-size: 15px; margin-top: 6px; }
+  .board { gap: 8px; margin-top: 8px; }
   .team { padding: 8px; border-radius: 14px; }
-  .team h2 { font-size: 16px; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
-  .team .sect { margin: 6px 0 4px; }
-  .bans { gap: 4px; }
-  .slot.ban { min-height: 0; }
-  .picks { grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .slot.pick { flex-direction: column; gap: 2px; padding: 4px 2px; min-height: 0; text-align: center; }
-  .slot.pick .portrait, .slot.pick .ord { width: 100%; height: auto; aspect-ratio: 1; }
-  .slot.pick .nm { font-size: 11px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .slot.pick .nm small, .slot .plus { display: none; }
-  .rec .rk { display: none; }
-  .rec .portrait { width: 44px; height: 44px; }
-  .rec .score .p { font-size: 19px; }
-  .search { width: 100%; order: 3; }
-  .pool { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
-  .bc img { width: 44px; height: 44px; }
-  .mapcard .change { display: none; }
+  .team h2 { font-size: 15px; margin: 0 0 6px; gap: 6px; }
+  .team h2 .fp { font-size: 9.5px; padding: 1px 6px; }
+  .team .sect { display: none; }
+  .bans { gap: 4px; margin-bottom: 6px; padding: 0 12%; }
+  .slot.ban { border-radius: 9px; }
+  .picks { gap: 4px; }
+  .slot.pick { padding: 4px 2px; min-height: 0; gap: 2px; border-radius: 10px; }
+  .slot.pick .portrait, .slot.pick .ord { width: 100%; height: auto; aspect-ratio: 1; border-radius: 8px; }
+  .slot.pick .ord { font-size: 18px; }
+  .slot.pick .nm { font-size: 10.5px; }
+  .slotw .x { width: 22px; height: 22px; top: -6px; right: -6px; }
+  .desk { gap: 8px; }
+  .prompt { flex-wrap: nowrap; align-items: flex-start; }
+  .prompt > div:first-child { min-width: 0; }
+  .prompt h3 { font-size: 18px; }
+  .prompt p { font-size: 12px; }
+  .prompt .btnrow { flex-wrap: nowrap; gap: 4px; }
+  .prompt .btn { padding: 5px 9px; font-size: 12.5px; }
+  .phead .hint { display: none; }
+  .phead h4 { margin-right: auto; }
+  .bans { padding: 0 16%; }
+  .panel { padding: 10px; border-radius: 14px; }
+  .phead { margin-bottom: 8px; }
+  .sugg { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .tile-main { grid-template-columns: 1fr; grid-template-rows: none; justify-items: center; text-align: center; padding: 8px 4px 6px; row-gap: 1px; }
+  .tile-main .pic { grid-row: auto; width: 44px; height: 44px; }
+  .tile-main .nm { font-size: 12.5px; max-width: 100%; }
+  .tile-main .val { font-size: 18px; }
+  .tile-main .sub { font-size: 10.5px; max-width: 100%; }
+  .tile-info { width: 22px; height: 22px; top: 4px; right: 4px; }
+  .pool { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+  .bc { padding: 4px 2px; border-radius: 10px; }
+  .bc img { width: 100%; height: auto; aspect-ratio: 1; max-width: 52px; }
+  .bc .n { font-size: 10.5px; }
+  .bc .w { font-size: 10px; }
+  .why-hd { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .why-hd img { width: 48px; height: 48px; }
+  .why-hd h2 { font-size: 20px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -319,7 +363,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
       <button role="tab" id="tab-stats" aria-selected="false" data-tab="stats">Map stats</button>
       <button role="tab" id="tab-about" aria-selected="false" data-tab="about">How it works</button>
     </nav>
-    <label class="rank" for="rankSel">Rank <select id="rankSel"></select></label>
+    <label class="rank" for="rankSel"><span class="long">Rank</span> <select id="rankSel" aria-label="Rank"></select></label>
   </header>
 
   <main id="app">
@@ -337,16 +381,8 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
         <div class="ctrl">
           <span class="label">First pick</span>
           <div class="seg" role="group" aria-label="Who picks first">
-            <button type="button" class="us" id="fpUs" aria-pressed="true">Your team</button>
-            <button type="button" class="them" id="fpThem" aria-pressed="false">Enemy</button>
-          </div>
-        </div>
-        <div class="ctrl">
-          <span class="label">Draft</span>
-          <div class="btnrow">
-            <button type="button" class="btn" id="undoBtn">Undo</button>
-            <button type="button" class="btn" id="resetBtn">Reset</button>
-            <button type="button" class="btn" id="skipBansBtn">Skip bans</button>
+            <button type="button" class="us" id="fpUs" aria-pressed="true"><span class="long">Your team</span><span class="short">Us</span></button>
+            <button type="button" class="them" id="fpThem" aria-pressed="false"><span class="long">Enemy</span><span class="short">Them</span></button>
           </div>
         </div>
       </div>
@@ -368,18 +404,24 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
         <div class="desk">
           <div class="prompt">
             <div><h3 id="promptTitle">Loading…</h3><p id="promptSub"></p></div>
+            <div class="btnrow">
+              <button type="button" class="btn" id="skipBansBtn"><span class="long" id="skipLong">Skip bans</span><span class="short">Skip</span></button>
+              <button type="button" class="btn" id="undoBtn">Undo</button>
+              <button type="button" class="btn" id="resetBtn">Reset</button>
+            </div>
           </div>
           <div class="panel">
-            <div class="recs" id="recs"><div class="empty">Loading Ranked data…</div></div>
+            <div class="phead"><h4 id="suggTitle">Suggestions</h4><span class="hint" id="suggHint"></span><button type="button" class="linkbtn" id="moreBtn" hidden>Show more</button></div>
+            <div id="recs"><div class="empty">Loading Ranked data…</div></div>
           </div>
           <div class="panel">
-            <div class="pool-head">
-              <h4 id="poolTitle">All brawlers</h4>
-              <input class="search" id="poolSearch" type="search" placeholder="Search brawlers" aria-label="Search brawlers" autocomplete="off">
-              <select class="btn" id="poolSort" aria-label="Sort brawlers">
-                <option value="map">Best on this map</option>
-                <option value="name">A to Z</option>
-              </select>
+            <div class="poolbar">
+              <input class="search" id="poolSearch" type="search" placeholder="Search brawlers" aria-label="Search brawlers" autocomplete="off" enterkeyhint="done">
+              <div class="seg" role="group" aria-label="Sort brawlers">
+                <button type="button" id="sortSmart" aria-pressed="true">Likely</button>
+                <button type="button" id="sortName" aria-pressed="false">A–Z</button>
+              </div>
+              <span class="kbd">Type a name, then <kbd>Enter</kbd></span>
             </div>
             <div class="pool" id="pool"></div>
           </div>
@@ -408,7 +450,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
         </button>
         <div class="ctrl" style="flex:1 1 220px">
           <span class="label">Find a brawler</span>
-          <input class="search" id="statsSearch" type="search" placeholder="Search" aria-label="Search brawlers in map stats" style="width:100%" autocomplete="off">
+          <input class="search" id="statsSearch" type="search" placeholder="Search" aria-label="Search brawlers in map stats" autocomplete="off">
         </div>
       </div>
       <div class="stats-layout">
@@ -433,6 +475,10 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     <div class="sheet-head"><h2 id="mapSheetTitle">Ranked maps</h2><button type="button" class="btn" id="mapClose">Close</button></div>
     <div id="mapGroups"></div>
   </div>
+</div>
+
+<div class="overlay" id="whyOverlay" hidden role="dialog" aria-modal="true" aria-label="Breakdown">
+  <div class="sheet narrow" id="whySheet"></div>
 </div>
 
 <script>
@@ -461,6 +507,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
   const fmtInt = (n) => Number(n).toLocaleString("en-US");
   const fmtK = (n) => (n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(n));
   const cls = (v, eps = 0.05) => (v > eps ? "pos" : v < -eps ? "neg" : "");
+  const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "");
   const store = {
     get(k, d) { try { const v = localStorage.getItem("bdl:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem("bdl:" + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
@@ -470,6 +517,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     const d = new Date(Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8)));
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
   };
+  const isTyping = (el) => el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA" || el.isContentEditable);
 
   // ---------- state ----------
   const SIDES = ["us", "them"];
@@ -485,15 +533,15 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     active: null,
     history: [],
     tab: "draft",
-    poolSort: store.get("poolSort", "map"),
+    poolSort: store.get("poolSort2", "smart"),
     poolSearch: "",
-    expanded: new Set(),
-    showAll: false,
+    showMore: false,
     statsSort: { key: "adj", dir: -1 },
     statsSearch: "",
     statsSel: null,
   };
   let D = null; // derived numbers for the current rank bucket + map
+  let NAMES = []; // normalized names for search
   const deriveCache = new Map();
 
   // ---------- data ----------
@@ -509,10 +557,8 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
 
   function derive() {
     const S = state.stats[state.bucket];
-    const meta = state.meta;
-    const n = meta.brawlers.length;
-    const mi = mapInfo();
-    const mode = mi.mode;
+    const n = state.meta.brawlers.length;
+    const mode = mapInfo().mode;
     const key = state.bucket + "|" + mode;
     let base = deriveCache.get(key);
     if (!base) {
@@ -558,7 +604,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
       M[i] = S.coef.map * (src.length > 4 ? src[4] : src[3]);
       row.push(r || [0, 0, 0, L[i], M[i]]);
     }
-    return { n, mode, modeName: state.meta.modes[mode] || mode, L, M, present, row, games: mp ? mp.games : 0, coef: S.coef, ...base };
+    return { n, mode, modeName: state.meta.modes[mode] || mode, L, M, present, row, games: mp ? mp.games : 0, ...base };
   }
 
   // ---------- draft order ----------
@@ -647,7 +693,6 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     }
     return best;
   }
-  // Best reply for the side to move at rem[0], returns {c, v}
   function bestReply(ctx, z, KS) {
     if (!ctx.rem.length) return null;
     const s = ctx.rem[0];
@@ -664,20 +709,18 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     }
     return best;
   }
-
   function projection() {
     const ctx = buildCtx();
     const v = search(ctx, 0, ctx.z, -Infinity, Infinity, 0, [7, 5, 4, 4, 3, 3]);
     return { p: sig(v), parts: ctx.parts, done: ctx.rem.length === 0, picks: ctx.us.length + ctx.them.length };
   }
-
   function analyzePick(sideKey) {
     const ctx = buildCtx();
     const s0 = sideKey === "us" ? 1 : -1;
     const ri = ctx.rem.indexOf(s0);
     if (ri >= 0) ctx.rem.splice(ri, 1);
     const oppLeft = ctx.rem.includes(-s0);
-    const cands = topK(ctx, s0, 28);
+    const cands = topK(ctx, s0, 24);
     const KS = [7, 5, 4, 4, 3];
     const team = s0 > 0 ? ctx.us : ctx.them;
     const out = [];
@@ -685,7 +728,6 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
       const dz = gain(ctx, c, s0);
       team.push(c); ctx.used[c] = 1;
       const v = search(ctx, 0, ctx.z + dz, -Infinity, Infinity, 0, KS);
-      // most dangerous counter-pick still available to the other team
       let threat = null;
       if (oppLeft) {
         for (let r = 0; r < D.n; r++) {
@@ -694,19 +736,17 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
           if (!threat || val > threat.val) threat = { r, val };
         }
       }
-      // what the other team does next in the projected line (if they move next)
       let reply = null;
       if (ctx.rem.length && ctx.rem[0] === -s0) {
         const br = bestReply(ctx, ctx.z + dz, KS);
         if (br) reply = br.c;
       }
       team.pop(); ctx.used[c] = 0;
-      out.push({ c, dz, v, p: s0 > 0 ? sig(v) : 1 - sig(v), now: s0 > 0 ? sig(ctx.z + dz) : 1 - sig(ctx.z + dz), threat, reply });
+      out.push({ c, v, p: s0 > 0 ? sig(v) : 1 - sig(v), now: s0 > 0 ? sig(ctx.z + dz) : 1 - sig(ctx.z + dz), threat, reply });
     }
     out.sort((a, b) => b.p - a.p);
-    return { side: sideKey, list: out, oppLeft, ctx };
+    return { kind: "pick", side: sideKey, list: out, oppLeft };
   }
-
   function analyzeBan(sideKey) {
     const ctx = buildCtx();
     const KS = [5, 4, 3, 3, 3, 3];
@@ -717,31 +757,29 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     const byStrength = [...avail].sort((a, b) => M[b] - M[a]).slice(0, 16);
     const presence = (i) => (games ? (row[i][0] + row[i][2]) / games : 0);
     const byPresence = [...avail].sort((a, b) => presence(b) - presence(a)).slice(0, 12);
-    const cands = [...new Set([...byStrength, ...byPresence])];
     const out = [];
-    for (const b of cands) {
+    for (const b of new Set([...byStrength, ...byPresence])) {
       ctx.used[b] = 1;
       const v = search(ctx, 0, ctx.z, -Infinity, Infinity, 0, KS);
       ctx.used[b] = 0;
-      const delta = (sig(v) - sig(base)) * (sideKey === "us" ? 1 : -1);
-      out.push({ c: b, delta, presence: presence(b) });
+      out.push({ c: b, delta: (sig(v) - sig(base)) * (sideKey === "us" ? 1 : -1) });
     }
     out.sort((a, b) => b.delta - a.delta);
-    return { side: sideKey, list: out, base: sig(base) };
+    return { kind: "ban", side: sideKey, list: out };
   }
 
   // ---------- rendering ----------
   const B = (i) => state.meta.brawlers[i];
-  const portrait = (i, cls = "portrait") => h("img", { class: cls, src: B(i).img, alt: "", loading: "lazy", decoding: "async" });
-  // win rate on this map, adjusted for sample size (tiny samples lean on the mode and overall rate)
-  const mapWr = (i) => (D.present[i] ? sig(D.L[i]) : null);
+  const portrait = (i, c = "portrait") => h("img", { class: c, src: B(i).img, alt: "", loading: "lazy", decoding: "async" });
+  const mapWr = (i) => (D.present[i] ? sig(D.L[i]) : null); // win rate on this map, adjusted for sample size
+  const pickRate = (i) => (D.games && D.row[i] ? D.row[i][0] / D.games : 0);
+  const banRate = (i) => (D.games && D.row[i] ? D.row[i][2] / D.games : 0);
   const sideName = (s) => (s === "us" ? "Your team" : "Enemy");
 
   function renderHeader() {
     const m = state.meta;
     $("#dataBadge").textContent = fmtInt(m.games) + " Ranked games · " + fmtDay(m.from) + "–" + fmtDay(m.to);
-    const sel = $("#rankSel");
-    sel.replaceChildren(...m.buckets.map((b) => h("option", { value: b.key, selected: b.key === state.bucket },
+    $("#rankSel").replaceChildren(...m.buckets.map((b) => h("option", { value: b.key, selected: b.key === state.bucket },
       b.label + " (" + fmtK(b.games) + (b.games < 15000 ? ", small sample" : "") + ")")));
   }
 
@@ -752,26 +790,24 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
       if (mi.img) { img.src = mi.img; img.hidden = false; } else img.hidden = true;
       $("#mapMode" + sfx).textContent = mi.modeName;
       $("#mapName" + sfx).textContent = mi.name;
-      $("#mapSub" + sfx).textContent = fmtInt(D.games) + " games at this rank";
+      $("#mapSub" + sfx).textContent = mi.modeName + " · " + fmtInt(D.games) + " games";
     }
   }
 
   function renderSlots() {
     for (const side of SIDES) {
       const cap = side === "us" ? "Us" : "Them";
-      const bans = $("#bans" + cap);
-      bans.replaceChildren(...[0, 1, 2].map((k) => slotEl(side, "ban", k)));
-      const picks = $("#picks" + cap);
-      picks.replaceChildren(...[0, 1, 2].map((k) => slotEl(side, "pick", k)));
+      $("#bans" + cap).replaceChildren(...[0, 1, 2].map((k) => slotEl(side, "ban", k)));
+      $("#picks" + cap).replaceChildren(...[0, 1, 2].map((k) => slotEl(side, "pick", k)));
     }
     $("#fpTagUs").hidden = !state.usFirst;
     $("#fpTagThem").hidden = state.usFirst;
     $("#fpUs").setAttribute("aria-pressed", String(state.usFirst));
     $("#fpThem").setAttribute("aria-pressed", String(!state.usFirst));
     $("#undoBtn").disabled = !state.history.length;
-    const bansEmpty = SIDES.every((s) => state.bans[s].every((x) => x < 0));
-    $("#skipBansBtn").hidden = state.skipBans || anyPick() || !state.active || state.active.kind !== "ban";
-    $("#skipBansBtn").textContent = bansEmpty ? "Skip bans" : "Done with bans";
+    const inBans = state.active && state.active.kind === "ban";
+    $("#skipBansBtn").hidden = !inBans;
+    $("#skipLong").textContent = SIDES.every((s) => state.bans[s].every((x) => x < 0)) ? "Skip bans" : "Done with bans";
   }
 
   function slotEl(side, kind, k) {
@@ -780,30 +816,25 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     const a = state.active;
     const isActive = a && a.side === side && a.kind === kind && a.slot === k;
     const label = kind === "ban" ? `${sideName(side)} ban ${k + 1}` : `${sideName(side)} pick ${stepNum(side, k)}`;
-    const el = h("button", {
+    const btn = h("button", {
       type: "button",
       class: `slot ${kind}${v >= 0 ? " filled" : ""}${isActive ? " active" : ""}`,
       "aria-label": v >= 0 ? `${label}: ${B(v).name}` : `${label}: empty`,
       "aria-pressed": isActive ? "true" : "false",
-      onclick: () => { state.active = { side, kind, slot: k }; refresh(); },
+      onclick: () => { state.active = { side, kind, slot: k }; state.showMore = false; refresh(); },
     });
     if (v >= 0) {
-      el.append(portrait(v));
+      btn.append(portrait(v));
       if (kind === "pick") {
         const wr = mapWr(v);
-        el.append(h("div", { class: "nm" }, B(v).name, h("small", { class: "num" }, wr == null ? "No map data" : fmtPct(wr) + " on map")));
+        btn.append(h("div", { class: "nm" }, B(v).name, h("small", { class: "num" }, wr == null ? "No map data" : fmtPct(wr) + " on map")));
       }
-      el.append(h("span", {
-        class: "x", role: "button", tabindex: "0", "aria-label": "Clear " + label, text: "×",
-        onclick: (e) => { e.stopPropagation(); clearSlot(side, kind, k); },
-        onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); clearSlot(side, kind, k); } },
-      }));
     } else if (kind === "pick") {
-      el.append(h("span", { class: "ord" }, String(stepNum(side, k))), h("span", { class: "plus" }, isActive ? "Choose below" : "Empty"));
-    } else {
-      el.append(h("span", { class: "plus" }, isActive ? "Choose" : "—"));
+      btn.append(h("span", { class: "ord" }, String(stepNum(side, k))), h("span", { class: "plus" }, isActive ? "Choose" : "Empty"));
     }
-    return el;
+    const wrap = h("div", { class: "slotw" + (isActive && v >= 0 ? " on" : "") }, btn);
+    if (v >= 0) wrap.append(h("button", { type: "button", class: "x", "aria-label": "Clear " + label, onclick: () => clearSlot(side, kind, k) }, "×"));
+    return wrap;
   }
 
   function clearSlot(side, kind, k) {
@@ -817,15 +848,18 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
 
   function choose(i) {
     const a = state.active;
-    if (!a) return;
-    if (usedSet().has(i)) return;
+    if (!a || usedSet().has(i) || !D.present[i]) return;
     const arr = a.kind === "ban" ? state.bans[a.side] : state.picks[a.side];
     state.history.push({ side: a.side, kind: a.kind, slot: a.slot, prev: arr[a.slot] });
     arr[a.slot] = i;
     state.active = defaultActive();
-    state.expanded.clear();
-    state.showAll = false;
+    state.showMore = false;
+    closeWhy();
+    const search = $("#poolSearch");
+    const keepFocus = document.activeElement === search;
+    search.value = ""; state.poolSearch = "";
     refresh();
+    if (keepFocus) search.focus();
   }
 
   function renderPrompt() {
@@ -834,23 +868,16 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     t.replaceChildren();
     if (!a) {
       t.append("Draft complete");
-      s.textContent = "Change any slot to compare alternatives, or reset to start a new draft.";
-      $("#poolTitle").textContent = "All brawlers";
+      s.textContent = "Tap any slot to try a different brawler, or Reset for a new draft.";
       return;
     }
     const span = h("span", { class: a.side }, a.side === "us" ? "Your" : "Enemy");
     if (a.kind === "ban") {
-      t.append(span, ` ban ${a.slot + 1}`);
-      s.textContent = a.side === "us"
-        ? "Bans that raise your projected win chance the most, given who picks first."
-        : "Bans the enemy benefits from most. Enter their real bans once they show.";
-      $("#poolTitle").textContent = "Tap a brawler to ban it";
+      t.append(span, ` ban ${a.slot + 1} of 3`);
+      s.textContent = a.side === "us" ? "Tap a suggestion or any brawler below. Bans are optional." : "Tap the brawlers they banned. Most-banned are first.";
     } else {
       t.append(span, ` pick · #${stepNum(a.side, a.slot)} of 6`);
-      s.textContent = a.side === "us"
-        ? "Ranked by your win chance if both teams draft well from here."
-        : "What the enemy should pick. Enter what they actually lock in.";
-      $("#poolTitle").textContent = a.side === "us" ? "Tap a brawler to pick it" : "Tap the brawler the enemy picked";
+      s.textContent = a.side === "us" ? "Tap a suggestion or any brawler below." : "Tap what they locked in. Their most likely picks are first.";
     }
   }
 
@@ -860,7 +887,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     const bEl = $("#oddsB"), rEl = $("#oddsR");
     bEl.style.width = pb + "%"; rEl.style.width = prr + "%";
     bEl.textContent = pb.toFixed(1) + "%"; rEl.textContent = prr.toFixed(1) + "%";
-    $("#oddsTitle").textContent = pr.done ? "Draft win chance" : pr.picks ? "Projected win chance (if both teams draft well)" : "Projected win chance before picks";
+    $("#oddsTitle").textContent = pr.done ? "Draft win chance" : "Projected win chance";
     const why = $("#oddsWhy");
     if (pr.picks) {
       why.replaceChildren(
@@ -869,172 +896,200 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
         " · Synergy ", h("b", { class: cls(pp(pr.parts.syn)) }, fmtPP(pp(pr.parts.syn))),
       );
     } else {
-      why.textContent = state.usFirst ? "First pick gets the best brawler on the map" : "Second pick answers with two brawlers";
+      why.textContent = "if both teams draft well";
     }
   }
 
+  // ---------- suggestions ----------
   let analysisTimer = 0;
+  let lastRes = null;
   function renderRecs() {
     const box = $("#recs");
     const a = state.active;
     clearTimeout(analysisTimer);
-    if (!a) { box.replaceChildren(h("div", { class: "empty" }, "All six picks are in. The bar above shows the draft's win chance for your team.")); return; }
-    box.replaceChildren(h("div", { class: "thinking" }, "Running the draft forward…"));
+    const title = $("#suggTitle"), hint = $("#suggHint");
+    if (!a) {
+      title.textContent = "Draft complete";
+      hint.textContent = "";
+      box.replaceChildren(h("div", { class: "empty" }, "All six picks are in. The bar above shows your team's win chance for this draft."));
+      $("#moreBtn").hidden = true;
+      lastRes = null;
+      return;
+    }
+    if (a.kind === "ban") { title.textContent = a.side === "us" ? "Best bans for you" : "Bans that help them"; hint.textContent = a.side === "us" ? "change in your win chance" : "change in their win chance"; }
+    else if (a.side === "us") { title.textContent = "Best picks for you"; hint.textContent = "your win chance after the full draft"; }
+    else { title.textContent = "Their strongest picks"; hint.textContent = "prediction \u00b7 their win chance"; }
+    if (!box.firstChild || !box.querySelector(".tile")) box.replaceChildren(h("div", { class: "thinking" }, "Running the draft forward…"));
     analysisTimer = setTimeout(() => {
-      if (a.kind === "ban") renderBanRecs(box, analyzeBan(a.side));
-      else renderPickRecs(box, analyzePick(a.side));
+      lastRes = a.kind === "ban" ? analyzeBan(a.side) : analyzePick(a.side);
+      drawTiles();
+      renderPool(); // grid order for your picks follows the suggestions
     }, 10);
   }
 
-  function renderBanRecs(box, res) {
-    const list = res.list.slice(0, state.showAll ? 14 : 7);
-    if (!list.length) { box.replaceChildren(h("div", { class: "empty" }, "No ban candidates left.")); return; }
-    const items = list.map((r, idx) => {
-      const row = D.row[r.c];
-      const wr = mapWr(r.c);
-      const pickRate = D.games ? row[0] / D.games : 0, banRate = D.games ? row[2] / D.games : 0;
-      const el = h("div", { class: "rec" + (idx === 0 ? " lead" : "") },
-        h("div", { class: "rec-main" },
-          h("div", { class: "rk" }, String(idx + 1)),
-          portrait(r.c),
-          h("div", { class: "info" },
-            h("div", { class: "nm" }, B(r.c).name, idx === 0 ? h("span", { class: "badge star" }, "Best ban") : null,
-              r.delta < 0 ? h("span", { class: "badge" }, "Better to pick") : null),
-            h("div", { class: "chips num" },
-              h("span", { class: "chip" }, "Win ", h("b", {}, wr == null ? "–" : fmtPct(wr))),
-              h("span", { class: "chip" }, "Picked ", h("b", {}, fmtPct(pickRate, 0))),
-              h("span", { class: "chip" }, "Banned ", h("b", {}, fmtPct(banRate, 0))),
-            ),
-          ),
-          h("div", { class: "score" },
-            h("div", { class: "p num " + cls(r.delta * 100) }, fmtPP(r.delta * 100)),
-            h("div", { class: "l" }, res.side === "us" ? "your win chance" : "enemy win chance"),
-            h("div", { class: "acts" }, h("button", { type: "button", class: "btn primary", onclick: () => choose(r.c) }, res.side === "us" ? "Ban" : "They banned")),
-          ),
-        ),
-      );
-      return el;
-    });
-    const nodes = [...items];
-    if (res.list.length > 7) nodes.push(h("button", { type: "button", class: "btn showmore", onclick: () => { state.showAll = !state.showAll; renderRecs(); } }, state.showAll ? "Show fewer" : "Show more bans"));
-    box.replaceChildren(...nodes);
+  function drawTiles() {
+    const res = lastRes, box = $("#recs");
+    if (!res) return;
+    if (!res.list.length) { box.replaceChildren(h("div", { class: "empty" }, "No brawlers left.")); return; }
+    const phone = window.matchMedia("(max-width: 640px)").matches;
+    const base = phone ? 3 : 6;
+    const count = state.showMore ? 12 : base;
+    const show = res.list.slice(0, count);
+    let tiles;
+    if (res.kind === "ban") {
+      tiles = show.map((r, idx) => tile(r.c, idx, fmtPP(r.delta * 100), cls(r.delta * 100),
+        r.delta < -0.0005 ? h("span", {}, "better to pick") : h("span", {}, "banned ", h("b", {}, fmtPct(banRate(r.c), 0))),
+        () => openWhyBan(r, res)));
+    } else {
+      const best = res.list[0].p;
+      const tps = show.filter((r) => r.threat).map((r) => pp(r.threat.val)).sort((a, b) => a - b);
+      const minTP = tps.length ? tps[0] : null;
+      const hiTP = tps.length ? Math.max(3.5, tps[Math.floor(tps.length * 0.75)], minTP + 1) : Infinity;
+      tiles = show.map((r, idx) => {
+        let sub;
+        const tp = r.threat ? pp(r.threat.val) : null;
+        if (res.oppLeft && tps.length > 1 && tp != null && tp >= hiTP) sub = h("span", { class: "tag-risk" }, "counterable");
+        else if (res.oppLeft && tps.length > 1 && tp === minTP) sub = h("span", { class: "tag-safe" }, "hard to counter");
+        else if (idx === 0) sub = h("span", { class: "tag-top" }, "top pick");
+        else sub = h("span", {}, fmtPP((r.p - best) * 100) + " vs top");
+        return tile(r.c, idx, fmtPct(r.p), "", sub, () => openWhyPick(r, res));
+      });
+    }
+    const more = $("#moreBtn");
+    more.hidden = res.list.length <= base;
+    more.textContent = state.showMore ? "Show fewer" : "Show more";
+    box.replaceChildren(h("div", { class: "sugg" }, tiles));
   }
 
-  function renderPickRecs(box, res) {
-    const { list, side, oppLeft } = res;
-    if (!list.length) { box.replaceChildren(h("div", { class: "empty" }, "No brawlers left to pick.")); return; }
-    const show = list.slice(0, state.showAll ? 16 : 8);
-    const best = list[0].p;
-    // Counter exposure, relative to the other options on the list: the safest gets
-    // "Hard to counter", the most exposed quarter (and at least 3.5 points) "Counterable".
-    const tps = show.filter((r) => r.threat).map((r) => pp(r.threat.val)).sort((a, b) => a - b);
-    const minTP = tps.length ? tps[0] : null;
-    const hiTP = tps.length ? Math.max(3.5, tps[Math.floor(tps.length * 0.75)], minTP + 1) : Infinity;
-    const opp = side === "us" ? state.picks.them.filter((x) => x >= 0) : state.picks.us.filter((x) => x >= 0);
-    const ally = side === "us" ? state.picks.us.filter((x) => x >= 0) : state.picks.them.filter((x) => x >= 0);
-    const nodes = show.map((r, idx) => {
-      const c = r.c, n = D.n;
-      const mapPP = pp(D.M[c]);
-      let vsSum = 0; for (const e of opp) vsSum += D.V[c * n + e];
-      let synSum = 0; for (const a of ally) synSum += D.Sy[c * n + a];
-      const badges = [];
-      if (idx === 0) badges.push(h("span", { class: "badge star" }, "Top pick"));
-      if (r.threat && oppLeft && tps.length > 1) {
-        const tp = pp(r.threat.val);
-        if (tp === minTP && tp < hiTP) badges.push(h("span", { class: "badge good" }, "Hard to counter"));
-        else if (tp >= hiTP) badges.push(h("span", { class: "badge bad", title: B(r.threat.r).name + " counters this pick" }, "Counterable"));
-      }
-      const open = state.expanded.has(c);
-      const rec = h("div", { class: "rec" + (idx === 0 ? " lead" : "") });
-      const main = h("div", { class: "rec-main" },
-        h("div", { class: "rk" }, String(idx + 1)),
-        portrait(c),
-        h("div", { class: "info" },
-          h("div", { class: "nm" }, B(c).name, ...badges),
-          h("div", { class: "chips num" },
-            h("span", { class: "chip" }, "Map ", h("b", { class: cls(mapPP) }, fmtPP(mapPP))),
-            opp.length ? h("span", { class: "chip" }, "Counters ", h("b", { class: cls(pp(vsSum)) }, fmtPP(pp(vsSum)))) : null,
-            ally.length ? h("span", { class: "chip" }, "Synergy ", h("b", { class: cls(pp(synSum)) }, fmtPP(pp(synSum)))) : null,
-          ),
-        ),
-        h("div", { class: "score" },
-          h("div", { class: "p num" }, fmtPct(r.p)),
-          h("div", { class: "l" }, idx === 0 ? (side === "us" ? "your win chance" : "enemy win chance") : fmtPP((r.p - best) * 100) + " vs top"),
-          h("div", { class: "acts" },
-            h("button", { type: "button", class: "btn", "aria-expanded": String(open), onclick: () => { open ? state.expanded.delete(c) : state.expanded.add(c); renderPickRecsCached(); } }, open ? "Less" : "Why"),
-            h("button", { type: "button", class: "btn primary", onclick: () => choose(c) }, side === "us" ? "Pick" : "They picked"),
-          ),
-        ),
-      );
-      rec.append(main);
-      if (open) rec.append(detailFor(r, side, opp, ally));
-      return rec;
-    });
-    if (list.length > 8) nodes.push(h("button", { type: "button", class: "btn showmore", onclick: () => { state.showAll = !state.showAll; renderPickRecsCached(); } }, state.showAll ? "Show fewer" : "Show more picks"));
-    lastPickRes = res;
-    box.replaceChildren(...nodes);
+  function tile(c, idx, val, valCls, sub, onWhy) {
+    const a = state.active;
+    const verb = a.kind === "ban" ? (a.side === "us" ? "Ban" : "Enter enemy ban") : (a.side === "us" ? "Pick" : "Enter as enemy pick");
+    return h("div", { class: "tile" + (idx === 0 ? " lead" : "") },
+      h("button", { type: "button", class: "tile-main", "aria-label": `${verb}: ${B(c).name}, ${val}`, onclick: () => choose(c) },
+        portrait(c, "pic"),
+        h("span", { class: "nm" }, B(c).name),
+        h("span", { class: "val num " + valCls }, val),
+        h("span", { class: "sub" }, sub)),
+      h("button", { type: "button", class: "tile-info", "aria-label": "Why " + B(c).name, title: "Why", onclick: onWhy }, "i"));
   }
-  let lastPickRes = null;
-  function renderPickRecsCached() { if (lastPickRes) renderPickRecs($("#recs"), lastPickRes); }
 
+  // ---------- breakdown sheet ----------
   function vsLine(c, e) {
-    const n = D.n, k = c * n + e;
-    const cnt = D.Vn[k], w = D.Vw[k];
-    const v = pp(D.V[k]);
+    const k = c * D.n + e, cnt = D.Vn[k], w = D.Vw[k], v = pp(D.V[k]);
     return h("li", {},
       h("span", {}, "vs " + B(e).name, " ", h("span", { class: "n num" }, cnt ? `${fmtPct(w / cnt, 0)} in ${fmtInt(cnt)} ${D.Vsrc[k] === 1 ? D.modeName : "all-mode"} games` : "no games")),
       h("b", { class: "num " + cls(v) }, fmtPP(v)));
   }
   function synLine(c, a) {
-    const n = D.n, k = c * n + a;
-    const cnt = D.Sn[k], w = D.Sw[k];
-    const v = pp(D.Sy[k]);
+    const k = c * D.n + a, cnt = D.Sn[k], w = D.Sw[k], v = pp(D.Sy[k]);
     return h("li", {},
       h("span", {}, "with " + B(a).name, " ", h("span", { class: "n num" }, cnt ? `${fmtPct(w / cnt, 0)} in ${fmtInt(cnt)} games` : "no games")),
       h("b", { class: "num " + cls(v) }, fmtPP(v)));
   }
-
-  function detailFor(r, side, opp, ally) {
-    const c = r.c;
+  function mapList(c) {
     const row = D.row[c];
-    const wrap = h("div", { class: "rec-more" });
-    const mapUl = h("ul", {},
-      h("li", {}, h("span", {}, "Raw win rate here"), h("b", { class: "num" }, row[0] ? fmtPct(row[1] / row[0]) : "–")),
+    return h("ul", {},
+      h("li", {}, h("span", {}, "Win rate here"), h("b", { class: "num" }, row[0] ? fmtPct(row[1] / row[0]) : "–")),
       h("li", {}, h("span", {}, "Adjusted for sample size"), h("b", { class: "num" }, fmtPct(sig(D.L[c])))),
       h("li", {}, h("span", {}, "Games here"), h("b", { class: "num" }, fmtInt(row[0]))),
-      h("li", {}, h("span", {}, "Pick rate / ban rate"), h("b", { class: "num" }, D.games ? fmtPct(row[0] / D.games, 0) + " / " + fmtPct(row[2] / D.games, 0) : "–")),
-    );
-    wrap.append(h("div", {}, h("h4", {}, "On " + state.map), mapUl));
-    if (opp.length) wrap.append(h("div", {}, h("h4", {}, side === "us" ? "Against enemy picks" : "Against your picks"), h("ul", {}, opp.map((e) => vsLine(c, e)))));
-    if (ally.length) wrap.append(h("div", {}, h("h4", {}, side === "us" ? "With your picks" : "With enemy picks"), h("ul", {}, ally.map((a) => synLine(c, a)))));
+      h("li", {}, h("span", {}, "Pick rate / ban rate"), h("b", { class: "num" }, fmtPct(pickRate(c), 0) + " / " + fmtPct(banRate(c), 0))));
+  }
+  function openWhyPick(r, res) {
+    const c = r.c, side = res.side;
+    const opp = (side === "us" ? state.picks.them : state.picks.us).filter((x) => x >= 0);
+    const ally = (side === "us" ? state.picks.us : state.picks.them).filter((x) => x >= 0);
+    let vsSum = 0; for (const e of opp) vsSum += D.V[c * D.n + e];
+    let synSum = 0; for (const a of ally) synSum += D.Sy[c * D.n + a];
+    const body = h("div", { class: "why-body" }, h("div", {}, h("h4", {}, "On " + state.map), mapList(c)));
+    if (opp.length) body.append(h("div", {}, h("h4", {}, side === "us" ? "Against enemy picks" : "Against your picks"), h("ul", {}, opp.map((e) => vsLine(c, e)))));
+    if (ally.length) body.append(h("div", {}, h("h4", {}, side === "us" ? "With your picks" : "With enemy picks"), h("ul", {}, ally.map((a) => synLine(c, a)))));
     const look = h("ul", {});
     if (r.reply != null) look.append(h("li", {}, h("span", {}, "Their best answer"), h("b", {}, B(r.reply).name)));
     if (r.threat) look.append(h("li", {}, h("span", {}, "Hardest counter left: " + B(r.threat.r).name), h("b", { class: "num " + cls(-pp(r.threat.val)) }, fmtPP(-pp(r.threat.val)))));
     look.append(h("li", {}, h("span", {}, "Win chance right now"), h("b", { class: "num" }, fmtPct(r.now))));
     look.append(h("li", {}, h("span", {}, "After the rest of the draft"), h("b", { class: "num" }, fmtPct(r.p))));
-    wrap.append(h("div", {}, h("h4", {}, "Looking ahead"), look));
-    return wrap;
+    body.append(h("div", {}, h("h4", {}, "Looking ahead"), look));
+    openWhy(c, fmtPct(r.p), side === "us" ? "your win chance" : "their win chance",
+      h("div", { class: "chips num" },
+        h("span", { class: "chip" }, "Map ", h("b", { class: cls(pp(D.M[c])) }, fmtPP(pp(D.M[c])))),
+        opp.length ? h("span", { class: "chip" }, "Counters ", h("b", { class: cls(pp(vsSum)) }, fmtPP(pp(vsSum)))) : null,
+        ally.length ? h("span", { class: "chip" }, "Synergy ", h("b", { class: cls(pp(synSum)) }, fmtPP(pp(synSum)))) : null),
+      body, side === "us" ? "Pick " + B(c).name : "Enter as enemy pick");
+  }
+  function openWhyBan(r, res) {
+    const c = r.c;
+    const d = r.delta * 100;
+    const text = d < -0.05
+      ? `Banning ${B(c).name} lowers ${res.side === "us" ? "your" : "their"} projected win chance. With this pick order ${res.side === "us" ? "you" : "they"} would rather pick it.`
+      : `Banning ${B(c).name} changes ${res.side === "us" ? "your" : "their"} projected win chance by ${fmtPP(d)} points, because it takes away a pick the other team would make.`;
+    openWhy(c, fmtPP(d), res.side === "us" ? "your win chance" : "their win chance",
+      h("div", { class: "chips num" }, h("span", { class: "chip" }, "Map ", h("b", { class: cls(pp(D.M[c])) }, fmtPP(pp(D.M[c]))))),
+      h("div", { class: "why-body" }, h("div", {}, h("h4", {}, "On " + state.map), mapList(c)), h("div", {}, h("h4", {}, "Why this ban"), h("p", {}, text))),
+      res.side === "us" ? "Ban " + B(c).name : "Enter as enemy ban");
+  }
+  function openWhy(c, big, bigLabel, chips, body, cta) {
+    $("#whySheet").replaceChildren(
+      h("div", { class: "why-hd" }, portrait(c, ""), h("div", { style: "min-width:0" }, h("h2", {}, B(c).name), chips), h("div", { class: "big num" }, big, h("small", {}, bigLabel))),
+      body,
+      h("div", { class: "why-foot" },
+        h("button", { type: "button", class: "btn", onclick: closeWhy }, "Close"),
+        h("button", { type: "button", class: "btn primary", id: "whyGo", onclick: () => choose(c) }, cta)));
+    $("#whyOverlay").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("#whyGo").focus();
+  }
+  function closeWhy() { if (!$("#whyOverlay").hidden) { $("#whyOverlay").hidden = true; document.body.style.overflow = ""; } }
+
+  // ---------- brawler grid ----------
+  function poolOrder() {
+    const a = state.active;
+    const n = D.n;
+    let score, label;
+    if (!a) { score = (i) => D.M[i]; label = (i) => fmtPct(mapWr(i), 0); }
+    else if (a.kind === "ban") { score = (i) => banRate(i) * 2 + pickRate(i); label = (i) => "ban " + fmtPct(banRate(i), 0); }
+    else if (a.side === "them") {
+      // how often they take it when it's available
+      score = (i) => pickRate(i) / Math.max(0.1, 1 - banRate(i)) + banRate(i) * 0.3;
+      label = (i) => "pick " + fmtPct(pickRate(i), 0);
+    } else {
+      const rank = new Map();
+      if (lastRes && lastRes.kind === "pick" && lastRes.side === "us") lastRes.list.forEach((r, k) => rank.set(r.c, k));
+      const ctx = buildCtx();
+      score = (i) => (rank.has(i) ? 1000 - rank.get(i) : gain(ctx, i, 1));
+      label = (i) => fmtPct(mapWr(i), 0);
+    }
+    return { score, label, n };
   }
 
   function renderPool() {
     const used = usedSet();
-    const q = state.poolSearch.trim().toLowerCase();
-    let idx = state.meta.brawlers.map((_, i) => i);
-    if (q) idx = idx.filter((i) => B(i).name.toLowerCase().includes(q));
-    if (state.poolSort === "map") idx.sort((a, b) => (D.present[b] - D.present[a]) || (D.M[b] - D.M[a]));
-    else idx.sort((a, b) => B(a).name.localeCompare(B(b).name));
+    const q = norm(state.poolSearch.trim());
+    const { score, label, n } = poolOrder();
+    let idx = [];
+    for (let i = 0; i < n; i++) if (D.present[i] && (!q || NAMES[i].includes(q))) idx.push(i);
+    const sc = new Map(idx.map((i) => [i, score(i)]));
+    idx.sort((a, b) => {
+      const ua = used.has(a) ? 1 : 0, ub = used.has(b) ? 1 : 0;
+      if (ua !== ub) return ua - ub;
+      if (q) { const sa = NAMES[a].startsWith(q) ? 0 : 1, sb = NAMES[b].startsWith(q) ? 0 : 1; if (sa !== sb) return sa - sb; }
+      if (state.poolSort === "name") return B(a).name.localeCompare(B(b).name);
+      return sc.get(b) - sc.get(a);
+    });
+    $("#sortSmart").setAttribute("aria-pressed", String(state.poolSort === "smart"));
+    $("#sortName").setAttribute("aria-pressed", String(state.poolSort === "name"));
     const disabledAll = !state.active;
-    $("#poolSort").value = state.poolSort;
+    let firstMarked = false;
     $("#pool").replaceChildren(...idx.map((i) => {
-      const wr = mapWr(i);
       const isUsed = used.has(i);
+      const enabled = !isUsed && !disabledAll;
+      const mark = q && enabled && !firstMarked;
+      if (mark) firstMarked = true;
       return h("button", {
-        type: "button", class: "bc" + (D.present[i] ? "" : " nodata"),
-        disabled: isUsed || disabledAll || !D.present[i],
-        title: B(i).name,
+        type: "button", class: "bc" + (mark ? " first" : ""), disabled: !enabled, title: B(i).name,
         onclick: () => choose(i),
-      }, portrait(i, ""), h("span", { class: "n" }, B(i).name), h("span", { class: "w num" }, !D.present[i] ? "no data" : wr == null ? "–" : fmtPct(wr, 0)));
+      }, portrait(i, ""), h("span", { class: "n" }, B(i).name), h("span", { class: "w num" }, label(i)));
     }));
+    if (!idx.length) $("#pool").replaceChildren(h("div", { class: "empty" }, "No brawler matches “" + state.poolSearch + "”."));
   }
 
   // ---------- map picker ----------
@@ -1058,7 +1113,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     state.map = name; store.set("map", name);
     state.statsSel = null;
     D = derive();
-    refresh(true);
+    refresh();
   }
 
   // ---------- stats view ----------
@@ -1071,22 +1126,19 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     { key: "games", label: "Games" },
   ];
   function renderStats() {
-    const head = $("#statsHead");
-    head.replaceChildren(...STATS_COLS.map((c) => {
+    $("#statsHead").replaceChildren(...STATS_COLS.map((c) => {
       const sorted = state.statsSort.key === c.key;
       return h("th", { scope: "col" }, h("button", {
         type: "button", title: c.title || null, "aria-sort": sorted ? (state.statsSort.dir < 0 ? "descending" : "ascending") : null,
         onclick: () => { state.statsSort = { key: c.key, dir: sorted ? -state.statsSort.dir : (c.key === "name" ? 1 : -1) }; renderStats(); },
       }, c.label + (sorted ? (state.statsSort.dir < 0 ? " ↓" : " ↑") : "")));
     }));
-    const G = D.games || 1;
-    const q = state.statsSearch.trim().toLowerCase();
-    let rows = [];
+    const q = norm(state.statsSearch.trim());
+    const rows = [];
     for (let i = 0; i < D.n; i++) {
-      if (!D.present[i]) continue;
-      if (q && !B(i).name.toLowerCase().includes(q)) continue;
+      if (!D.present[i] || (q && !NAMES[i].includes(q))) continue;
       const r = D.row[i];
-      rows.push({ i, name: B(i).name, adj: pp(D.M[i]), wr: r[0] ? r[1] / r[0] : 0, pick: r[0] / G, ban: r[2] / G, games: r[0] });
+      rows.push({ i, name: B(i).name, adj: pp(D.M[i]), wr: r[0] ? r[1] / r[0] : 0, pick: pickRate(i), ban: banRate(i), games: r[0] });
     }
     const { key, dir } = state.statsSort;
     rows.sort((a, b) => (key === "name" ? a.name.localeCompare(b.name) : a[key] - b[key]) * dir);
@@ -1121,14 +1173,14 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     }
     vsList.sort((a, b) => b.v - a.v);
     synList.sort((a, b) => b.v - a.v);
-    const li = (o, prefix) => h("li", {}, portrait(o.e, ""), h("span", {}, B(o.e).name, " ", h("span", { class: "n num" }, `${fmtPct(o.w / o.cnt, 0)} · ${fmtInt(o.cnt)}`)), h("b", { class: "num " + cls(pp(o.v)) }, fmtPP(pp(o.v))));
+    const li = (o) => h("li", {}, portrait(o.e, ""), h("span", {}, B(o.e).name, " ", h("span", { class: "n num" }, `${fmtPct(o.w / o.cnt, 0)} · ${fmtInt(o.cnt)}`)), h("b", { class: "num " + cls(pp(o.v)) }, fmtPP(pp(o.v))));
     const r = D.row[x];
     box.replaceChildren(
       h("div", { class: "hd" }, portrait(x, ""), h("div", {}, h("h3", {}, B(x).name), h("div", { class: "num", style: "color:var(--muted);font-size:13px" }, `${r[0] ? fmtPct(r[1] / r[0]) : "–"} win · ${fmtInt(r[0])} games on ${state.map}`))),
-      h("h4", {}, "Strong against"), h("ul", {}, vsList.slice(0, 5).map((o) => li(o))),
-      h("h4", {}, "Weak against"), h("ul", {}, vsList.slice(-5).reverse().map((o) => li(o))),
-      h("h4", {}, "Best teammates"), h("ul", {}, synList.slice(0, 5).map((o) => li(o))),
-      h("p", { class: "n", style: "color:var(--muted);font-size:12px;margin:12px 0 0" }, `Matchups use ${D.modeName} games where there are enough, otherwise all modes. Shown: pairs with ${minN}+ games. The number is the edge beyond each brawler's own strength.`),
+      h("h4", {}, "Strong against"), h("ul", {}, vsList.slice(0, 5).map(li)),
+      h("h4", {}, "Weak against"), h("ul", {}, vsList.slice(-5).reverse().map(li)),
+      h("h4", {}, "Best teammates"), h("ul", {}, synList.slice(0, 5).map(li)),
+      h("p", { style: "color:var(--muted);font-size:12px;margin:12px 0 0" }, `Matchups use ${D.modeName} games where there are enough, otherwise all modes. Shown: pairs with ${minN}+ games. The number is the edge beyond each brawler's own strength.`),
     );
   }
 
@@ -1146,9 +1198,19 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
         h("div", { class: "kpi" }, h("div", { class: "v num" }, String(m.maps.length)), h("div", { class: "k" }, "Ranked maps")),
       ),
       h("div", { class: "panel" },
+        h("h3", {}, "Entering a draft quickly"),
+        h("ul", {},
+          h("li", {}, "The highlighted slot fills next. Tap a suggestion or any brawler in the grid."),
+          h("li", {}, "The grid sorts itself for the slot: most-banned first for bans, most-picked first for enemy picks, best for you on your picks."),
+          h("li", {}, "On a computer, just start typing a name and press Enter. You can enter a whole draft from the keyboard."),
+          h("li", {}, "Bans are optional: Skip bans jumps straight to picks. Tap any filled slot and its × to change it, or use Undo."),
+        ),
+      ),
+      h("div", { class: "panel" },
         h("h3", {}, "Where the numbers come from"),
         h("p", {}, "Every game here is a real Ranked draft pulled from the ", h("b", {}, "official Brawl Stars API"), ". We start from the trophy leaderboards of 80+ countries, then follow the players we meet in Ranked games, so most of the data comes from people who play Ranked a lot. Each game records the map, all six picks, all six bans, each player's rank and who won."),
         h("p", {}, "The rank filter uses the average rank of the six players. ", h("b", {}, b.label), " covers " + fmtInt(b.games) + " games."),
+        h("p", {}, "The tool can't see your game. Enemy picks and bans are whatever you enter; the suggestions on their turn are predictions."),
       ),
       h("div", { class: "panel" },
         h("h3", {}, "How a pick is scored"),
@@ -1156,7 +1218,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
           h("li", {}, h("b", {}, "Map score:"), " how much the brawler adds to a team's win chance on this map, built from its overall, mode and map results. Thin samples stay close to zero, so a brawler with 12 games can't top the list by luck."),
           h("li", {}, h("b", {}, "Counters:"), " how much better the brawler does against each enemy pick than the two brawlers' own strength predicts, with a separate adjustment for the mode."),
           h("li", {}, h("b", {}, "Synergy:"), " the same idea for teammates: how much better a pair does together than expected."),
-          h("li", {}, h("b", {}, "Looking ahead:"), " the tool plays the rest of the draft forward. Both teams pick their strongest options in Ranked order (1-2-2-1), and each recommendation is ranked by your win chance once all six brawlers are in. A pick that the enemy can hard-counter next turn drops down the list."),
+          h("li", {}, h("b", {}, "Looking ahead:"), " the tool plays the rest of the draft forward. Both teams pick their strongest options in Ranked order (1-2-2-1), and each suggestion is ranked by your win chance once all six brawlers are in. A pick the enemy can hard-counter next turn drops down the list."),
           h("li", {}, h("b", {}, "Bans:"), " each ban is tested by re-running the draft without that brawler. If you pick first, banning the best brawler on the map can hurt you, so the tool says when a brawler is better picked than banned."),
         ),
         h("p", {}, "All three parts are learned together from every game in one model (a regularized logistic regression). Learning them jointly stops double counting: a brawler that only looks strong because it's usually paired with a strong teammate doesn't get that teammate's credit."),
@@ -1184,8 +1246,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     if (tab === "about") renderAbout();
   }
 
-  function refresh(full = false) {
-    if (!state.active && full) state.active = defaultActive();
+  function refresh() {
     renderMapCards();
     renderSlots();
     renderPrompt();
@@ -1194,12 +1255,9 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     renderPool();
     if (state.tab === "stats") renderStats();
     if (state.tab === "about") renderAbout();
-    saveDraft();
-  }
-
-  function saveDraft() {
     store.set("draft", { map: state.map, usFirst: state.usFirst, bans: state.bans, picks: state.picks, skipBans: state.skipBans });
   }
+
   function restoreDraft() {
     const d = store.get("draft", null);
     if (!d || d.map !== state.map) return;
@@ -1215,9 +1273,17 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     state.picks = { us: [-1, -1, -1], them: [-1, -1, -1] };
     state.history = [];
     state.skipBans = false;
-    state.expanded.clear();
-    state.showAll = false;
+    state.showMore = false;
     state.active = defaultActive();
+    refresh();
+  }
+
+  function undo() {
+    const last = state.history.pop();
+    if (!last) return;
+    const arr = last.kind === "ban" ? state.bans[last.side] : state.picks[last.side];
+    arr[last.slot] = last.prev;
+    state.active = last.prev >= 0 ? defaultActive() : { side: last.side, kind: last.kind, slot: last.slot };
     refresh();
   }
 
@@ -1228,27 +1294,26 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
     $("#mapBtn2").addEventListener("click", openMaps);
     $("#mapClose").addEventListener("click", closeMaps);
     $("#mapOverlay").addEventListener("click", (e) => { if (e.target.id === "mapOverlay") closeMaps(); });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#mapOverlay").hidden) closeMaps(); });
+    $("#whyOverlay").addEventListener("click", (e) => { if (e.target.id === "whyOverlay") closeWhy(); });
     $("#fpUs").addEventListener("click", () => { state.usFirst = true; store.set("usFirst", true); state.active = defaultActive(); refresh(); });
     $("#fpThem").addEventListener("click", () => { state.usFirst = false; store.set("usFirst", false); state.active = defaultActive(); refresh(); });
-    $("#undoBtn").addEventListener("click", () => {
-      const last = state.history.pop();
-      if (!last) return;
-      const arr = last.kind === "ban" ? state.bans[last.side] : state.picks[last.side];
-      arr[last.slot] = last.prev;
-      state.active = { side: last.side, kind: last.kind, slot: last.slot };
-      if (last.prev >= 0) state.active = defaultActive();
-      refresh();
-    });
+    $("#undoBtn").addEventListener("click", undo);
+    $("#moreBtn").addEventListener("click", () => { state.showMore = !state.showMore; drawTiles(); });
     $("#resetBtn").addEventListener("click", resetDraft);
     $("#skipBansBtn").addEventListener("click", () => { state.skipBans = true; state.active = defaultActive(); refresh(); });
-    $("#poolSearch").addEventListener("input", (e) => { state.poolSearch = e.target.value; renderPool(); });
-    $("#poolSearch").addEventListener("keydown", (e) => {
-      if (e.key !== "Enter") return;
-      const first = $("#pool .bc:not(:disabled)");
-      if (first) { first.click(); e.target.value = ""; state.poolSearch = ""; renderPool(); }
+    const search = $("#poolSearch");
+    search.addEventListener("input", () => { state.poolSearch = search.value; renderPool(); });
+    search.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const first = $("#pool .bc:not(:disabled)");
+        if (first && state.poolSearch.trim()) first.click();
+      } else if (e.key === "Escape") {
+        search.value = ""; state.poolSearch = ""; renderPool();
+      }
     });
-    $("#poolSort").addEventListener("change", (e) => { state.poolSort = e.target.value; store.set("poolSort", state.poolSort); renderPool(); });
+    $("#sortSmart").addEventListener("click", () => { state.poolSort = "smart"; store.set("poolSort2", "smart"); renderPool(); });
+    $("#sortName").addEventListener("click", () => { state.poolSort = "name"; store.set("poolSort2", "name"); renderPool(); });
     $("#statsSearch").addEventListener("input", (e) => { state.statsSearch = e.target.value; renderStats(); });
     $("#rankSel").addEventListener("change", async (e) => {
       const key = e.target.value;
@@ -1257,11 +1322,20 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
       catch (err) { e.target.value = state.bucket; }
       finally { e.target.disabled = false; }
     });
+    // Keyboard: start typing anywhere to search; Ctrl/Cmd+Z to undo; Esc closes sheets.
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { if (!$("#whyOverlay").hidden) closeWhy(); else if (!$("#mapOverlay").hidden) closeMaps(); return; }
+      if (state.tab !== "draft" || !$("#mapOverlay").hidden || !$("#whyOverlay").hidden) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !isTyping(e.target)) { e.preventDefault(); undo(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
+      if (e.key.length === 1 && /[a-z0-9]/i.test(e.key)) search.focus();
+    });
   }
 
   async function boot() {
     try {
       state.meta = await getJSON("data/meta.json");
+      NAMES = state.meta.brawlers.map((b) => norm(b.name));
       if (!state.meta.buckets.find((b) => b.key === state.bucket)) state.bucket = state.meta.buckets[0].key;
       await loadBucket(state.bucket);
       if (!mapInfo()) {
