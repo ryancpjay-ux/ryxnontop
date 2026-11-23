@@ -226,6 +226,8 @@ th button { border: 0; background: none; padding: 0; font: inherit; color: inher
 th button[aria-sort] { color: var(--fg); }
 tbody tr { cursor: pointer; }
 tbody tr:hover td, tbody tr[aria-selected="true"] td { background: var(--surface-2); }
+tbody tr.thin td { color: var(--muted); }
+tbody tr.thin td .who img { opacity: .6; }
 td .who { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 td .who img { width: 30px; height: 30px; border-radius: 7px; object-fit: cover; background: var(--bg); }
 .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--star); vertical-align: middle; margin-left: 6px; opacity: .8; }
@@ -1062,7 +1064,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
   // ---------- stats view ----------
   const STATS_COLS = [
     { key: "name", label: "Brawler" },
-    { key: "adj", label: "Map score", title: "Win rate adjusted for sample size" },
+    { key: "adj", label: "Map score", title: "Win-chance points this brawler adds here compared with an average pick (draft model). Thin samples stay near zero." },
     { key: "wr", label: "Win rate" },
     { key: "pick", label: "Pick rate" },
     { key: "ban", label: "Ban rate" },
@@ -1084,18 +1086,20 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
       if (!D.present[i]) continue;
       if (q && !B(i).name.toLowerCase().includes(q)) continue;
       const r = D.row[i];
-      rows.push({ i, name: B(i).name, adj: sig(D.L[i]), wr: r[0] ? r[1] / r[0] : 0, pick: r[0] / G, ban: r[2] / G, games: r[0] });
+      rows.push({ i, name: B(i).name, adj: pp(D.M[i]), wr: r[0] ? r[1] / r[0] : 0, pick: r[0] / G, ban: r[2] / G, games: r[0] });
     }
     const { key, dir } = state.statsSort;
     rows.sort((a, b) => (key === "name" ? a.name.localeCompare(b.name) : a[key] - b[key]) * dir);
     const maxPick = Math.max(...rows.map((r) => r.pick), 0.0001);
     $("#statsBody").replaceChildren(...rows.map((r) => h("tr", {
       "aria-selected": state.statsSel === r.i ? "true" : "false", tabindex: "0",
+      class: r.games < 50 ? "thin" : null,
+      title: r.games < 50 ? "Under 50 games on this map: the score leans on this brawler's results across the mode" : null,
       onclick: () => { state.statsSel = r.i; renderStats(); },
       onkeydown: (e) => { if (e.key === "Enter") { state.statsSel = r.i; renderStats(); } },
     },
       h("td", {}, h("span", { class: "who" }, portrait(r.i, ""), r.name)),
-      h("td", { class: "num" }, h("b", {}, fmtPct(r.adj))),
+      h("td", { class: "num" }, h("b", { class: cls(r.adj) }, fmtPP(r.adj))),
       h("td", { class: "num" }, r.games ? fmtPct(r.wr) : "–"),
       h("td", { class: "num" }, fmtPct(r.pick), h("span", { class: "bar", style: `width:${Math.round(36 * r.pick / maxPick)}px` })),
       h("td", { class: "num" }, fmtPct(r.ban)),
